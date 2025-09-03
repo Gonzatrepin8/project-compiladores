@@ -17,21 +17,31 @@ void codegen(AST *n, SymTab *st);
 
 letra   [a-zA-Z]      
 digito  [0-9]   
-bool    (true|false)
-tipo    (bool|int|void)
 
 %%
-{digito}+                  { yylval.ival = atoi(yytext); return INT; }
-{bool}                     { yylval.ival = ((strcmp(strdup(yytext), "true")) ? 0 : 1) ; return BOOL; }
-"main"                     { return MAIN; }
-"return"                   { return RETURN; }
-"||"                       { return OR; }
-"&&"                       { return AND; }
-"!"                        { return NOT; }
-{tipo}                     { yylval.sval = strdup(yytext); return TIPO; }
-{letra}({letra}|{digito})* { yylval.sval = strdup(yytext); return ID; }
-[+*\-;()={}]               { return *yytext; }
+
+"extern"            { return EXTERN; }
+"program"           { return PROGRAM; }
+"else"              { return ELSE; }
+"then"              { return THEN; }
+"false"             { return FALSE; }
+"if"                { return IF; }
+"integer"           { return INTEGER; }
+"return"            { return RETURN; }
+"true"              { return TRUE; }
+"void"              { return VOID; }
+"while"             { return WHILE; }
+
+"&&"                { return AND; }
+"||"                { return OR; }
+"=="                { return EQ; }
+
+[+-/*%!<>]          { return *yytext; }
+
+[;(){}]             { return *yytext; }
+
 "//".* ;
+"/\*.*\*/";
 
 [ \t\r\n]+ ;
 
