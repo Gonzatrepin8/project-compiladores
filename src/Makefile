@@ -1,16 +1,13 @@
 CC = gcc
 CFLAGS = -Wno-error=implicit-function-declaration
 
-all: lex.yy.c calc-sintaxis.tab.c executable
+all: lex.yy.c compiler
 
-lex.yy.c: our_flex.l
-	flex our_flex.l
+lex.yy.c: flex.l
+	flex flex.l
 
-calc-sintaxis.tab.c calc-sintaxis.tab.h: calc-sintaxis.y
-	bison -d calc-sintaxis.y
-
-executable: lex.yy.c calc-sintaxis.tab.c ast.c typecheck.c symtab.c interpreter.c assembler.c
-	$(CC) lex.yy.c calc-sintaxis.tab.c ast.c typecheck.c symtab.c interpreter.c assembler.c $(CFLAGS) -o executable
+compiler: lex.yy.c
+	$(CC) lex.yy.c $(CFLAGS) -o compiler
 
 clean:
-	rm -f lex.yy.c calc-sintaxis.tab.c calc-sintaxis.tab.h executable
+	rm -f lex.yy.c compiler

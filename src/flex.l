@@ -1,15 +1,9 @@
 %{
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "ast.h"
-#include "symtab.h"
-#include "calc-sintaxis.tab.h"
 
-extern AST *root;
-void interpreter(AST* n, SymTab *st);
-TypeInfo check_types(AST* n, SymTab *st);
-void codegen(AST *n, SymTab *st);
 %}
 
 %option noyywrap
@@ -63,14 +57,7 @@ int main(int argc,char *argv[]){
         yyin = stdin;
 
     if (yyparse() == 0) {
-        print_ast(root, 0, 1);
-        printf("\n--- Type Checking ---\n");
-        SymTab *st = symtab_new();
-        check_types(root, st);
-        printf("\n--- Interpreter ---\n");
-        interpreter(root, st);
-        printf("\n--- Assembler ---\n");
-        codegen(root, st);
+        // Empty
     }
     return 0;
 }
