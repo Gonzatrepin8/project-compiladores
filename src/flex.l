@@ -1,16 +1,36 @@
 %{
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+/*
+
+enum yytokentype {
+    EXTERN=256, PROGRAM, ELSE, THEN, IF, RETURN, VOID,
+    INTEGER_TYPE, BOOL_TYPE, WHILE,
+    BOOL_LIT, INT_LIT, ID,
+    AND, OR, EQ,
+    PLUS, MINUS, MUL, DIV, MOD, LT, GT, ASSIGN, NOT,
+    SEMI, LPAREN, RPAREN, LBRACE, RBRACE
+};
+
+typedef union {
+    int ival;
+    int boolean;
+    char* sval;
+} YYSTYPE;
+
+*/
+
+YYSTYPE yylval;
 
 %}
+
 
 %option noyywrap
 %option yylineno
 
 letra   [a-zA-Z]      
-digito  [0-9]   
+digito  [0-9]
 
 %%
 
@@ -18,24 +38,29 @@ digito  [0-9]
 "program"           { return PROGRAM; }
 "else"              { return ELSE; }
 "then"              { return THEN; }
-"false"             { return FALSE; }
 "if"                { return IF; }
-"integer"           { return INTEGER; }
 "return"            { return RETURN; }
-"true"              { return TRUE; }
 "void"              { return VOID; }
+"integer"           { return INTEGER_TYPE; }
+"bool"              { return BOOL_TYPE; }
 "while"             { return WHILE; }
+"true"              { yylval.boolean = 1; return BOOL_LIT; }
+"false"             { yylval.boolean = 0; return BOOL_LIT; }
+{digito}+           { yylval.ival = atoi(yytext); return INT_LIT; } 
+{letra}({letra}|{digito})*  { yylval.sval = strdup(yytext); return ID; }
+ 
+"//".*;
+"/*"([^*]|\n|(\*+[^*/]))*"*/"
 
 "&&"                { return AND; }
 "||"                { return OR; }
 "=="                { return EQ; }
 
-[+-/*%!<>]          { return *yytext; }
+[+-/*%!<>=]         { return *yytext; }
 
 [;(){}]             { return *yytext; }
 
-"//".* ;
-"/\*.*\*/";
+
 
 [ \t\r\n]+ ;
 
@@ -49,15 +74,11 @@ void yyerror(const char *s) {
     // Empty
 }
 
-int main(int argc,char *argv[]){
-    ++argv,--argc;
-    if (argc > 0)
-        yyin = fopen(argv[0],"r");
-    else
-        yyin = stdin;
-
-    if (yyparse() == 0) {
-        // Empty
+int main() {
+    int tok;
+    while ((tok = yylex())) {
+        printf("Token: %d, lexema: %s\n", tok, yytext);
     }
     return 0;
 }
+
