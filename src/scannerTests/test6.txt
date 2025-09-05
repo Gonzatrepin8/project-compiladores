@@ -1,0 +1,4 @@
+/* este es un comentario de bloque */
+integer x
+/* otro comentario */
+return x
