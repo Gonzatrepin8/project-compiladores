@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "parser.tab.h"
+#include "ast.h"
 
 %}
 
