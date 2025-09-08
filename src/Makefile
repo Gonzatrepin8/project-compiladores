@@ -1,13 +1,16 @@
 CC = gcc
 CFLAGS = -Wno-error=implicit-function-declaration
 
-all: lex.yy.c compiler
+all: lex.yy.c parser.tab.c compiler
 
 lex.yy.c: flex.l
 	flex flex.l
 
-compiler: lex.yy.c
-	$(CC) lex.yy.c $(CFLAGS) -o compiler
+parser.tab.c parser.tab.h: parser.y
+	bison -d parser.y
+
+compiler: lex.yy.c parser.tab.c
+	$(CC) lex.yy.c parser.tab.c $(CFLAGS) -o compiler
 
 clean:
-	rm -f lex.yy.c compiler
+	rm -f lex.yy.c parser.tab.c compiler
