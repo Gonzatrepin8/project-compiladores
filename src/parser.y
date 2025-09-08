@@ -3,148 +3,341 @@
 #include <string.h>
 #include <stdio.h>
 #include "parser.tab.h"
-%}
+#include "ast.h"
 
-%token PROGRAM EXTERN BOOL_TYPE ELSE THEN FALSE IF INTEGER_TYPE RETURN TRUE VOID WHILE
-%token EQ AND OR
+void yyerror(const char *s);
+int yylex(void);
+extern int yylineno;
+extern FILE *yyin;
+
+AST *root = NULL;
+%}
 
 %union {
     int ival;
     int bval;
     char* sval;
+    struct AST *ast;
 }
+
+%token PROGRAM EXTERN BOOL_TYPE ELSE THEN FALSE IF INTEGER_TYPE RETURN TRUE VOID WHILE
+%token EQ AND OR
 
 %token <ival> INT_LIT
 %token <bval> BOOL_LIT
 %token <sval> ID
 
+%type <ast> program expr literal var_decls var_decl stmt stmt_list
+%type <ast> method_decls method_decl block type return_body
+%type <ast> op_else method_call arg_list_opt arg_list
+%type <ast> param_list_opt param_list method_body
+
+%right '!' UMINUS
 %left OR
 %left AND
 %left EQ
 %left '<' '>'
 %left '+' '-'
 %left '*' '/' '%'
-%right '!'
-%right UMINUS
-
 
 %%
+
 program
-    : PROGRAM '{' var_decls method_decls '}'
-    | PROGRAM '{' var_decls '}'
-    | PROGRAM '{' method_decls '}'
-    | PROGRAM '{' '}'
+    : PROGRAM '{' var_decls method_decls '}' {
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, $4);
+        root = $$;
+    }
+    | PROGRAM '{' var_decls '}' {
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, NULL);
+        root = $$;
+    }
+    | PROGRAM '{' method_decls '}' {
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, NULL, $3);
+        root = $$;
+    }
+    | PROGRAM '{' '}' {
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, NULL, NULL);
+        root = $$;
+    }
     ;
 
 var_decls
-    : var_decl
-    | var_decls var_decl
+    : /* empty */ {
+        $$ = NULL;
+    }
+    | var_decl {
+        $$ = $1;
+    }
+    | var_decls var_decl {
+        AST *temp = $1;
+        if(temp) {
+            while(temp->next) temp = temp->next;
+            temp->next = $2;
+            $$ = $1;
+        } else {
+            $$ = $2;
+        }
+    }
     ;
 
 var_decl
-    : type ID '=' expr ';'
+    : type ID '=' expr ';' {
+        $$ = make_node(NODE_ASSIGN, NULL, 0, 0, NULL, make_node(NODE_VAR_DECL, $2, 0, 0, NULL, $1, NULL), $4);
+        free($2);
+    }
     ;
 
 method_decls
-    : method_decl
-    | method_decls method_decl
+    : method_decl {
+        $$ = $1;
+    }
+    | method_decls method_decl {
+        AST *temp = $1;
+        if (temp) {
+            while(temp->next) temp = temp->next;
+            temp->next = $2;
+            $$ = $1;
+        } else {
+            $$ = $2;
+        }
+    }
     ;
 
 method_decl
-    : type ID '(' param_list_opt ')' method_body
-    | VOID ID '(' param_list_opt ')' method_body
+    : type ID '(' param_list_opt ')' method_body {
+        AST* params_and_body = make_node(NODE_BLOCK, "params_and_body", 0, 0, NULL, $4, $6);
+        $$ = make_node(NODE_FUNCTION, $2, 0, 0, NULL, $1, params_and_body);
+        free($2);
+    }
+    | VOID ID '(' param_list_opt ')' method_body {
+        AST* params_and_body = make_node(NODE_BLOCK, "params_and_body", 0, 0, NULL, $4, $6);
+        $$ = make_node(NODE_FUNCTION, $2, 0, 0, NULL, make_node(NODE_TYPE, "void", 0, 0, NULL, NULL, NULL), params_and_body);
+        free($2);
+    }
     ;
 
 param_list_opt
-    : /* empty */
-    | param_list
+    : /* empty */ {
+        $$ = NULL;
+    }
+    | param_list {
+        $$ = $1;
+    }
     ;
 
 param_list
-    : type ID
-    | param_list ',' type ID
+    : type ID {
+        $$ = make_node(NODE_PARAM, $2, 0, 0, NULL, $1, NULL);
+        free($2);
+    }
+    | param_list ',' type ID {
+        AST* new_param = make_node(NODE_PARAM, $4, 0, 0, NULL, $3, NULL);
+        free($4);
+        $1->next = new_param;
+        $$ = $1;
+    }
     ;
 
 method_body
-    : block
-    | EXTERN ';'
+    : block {
+        $$ = $1;
+    }
+    | EXTERN ';' {
+        $$ = make_node(NODE_ID, "EXTERN", 0, 0, NULL, NULL, NULL);
+    }
     ;
 
 block
-    : '{' var_decls stmt_list '}'
-    | '{' stmt_list '}'
+    : '{' var_decls stmt_list '}' {
+        $$ = make_node(NODE_BLOCK, NULL, 0, 0, NULL, $2, $3);
+    }
+    | '{' stmt_list '}' {
+        $$ = make_node(NODE_BLOCK, NULL, 0, 0, NULL, NULL, $2);
+    }
     ;
 
 stmt_list
-    : /* empty */
-    | stmt_list stmt
+    : /* empty */ {
+        $$ = NULL;
+    }
+    | stmt_list stmt {
+        if ($1 == NULL) {
+            $$ = $2;
+        } else if ($2 != NULL) {
+            AST *temp = $1;
+            while(temp->next) temp = temp->next;
+            temp->next = $2;
+            $$ = $1;
+        } else {
+            $$ = $1;
+        }
+    }
     ;
 
 stmt
-    : ID '=' expr ';'
-    | method_call ';'
-    | IF '(' expr ')' THEN block op_else
-    | WHILE expr block
-    | RETURN return_body ';'
-    | ';'
-    | block
+    : ID '=' expr ';' {
+        $$ = make_node(NODE_ASSIGN, NULL, 0, 0, NULL, make_node(NODE_ID, $1, 0, 0, NULL, NULL, NULL), $3);
+        free($1);
+    }
+    | method_call ';' {
+        $$ = $1;
+    }
+    | IF '(' expr ')' THEN block op_else {
+        $$ = make_node(NODE_IF, NULL, 0, 0, NULL, $3, $6);
+        if ($6) $6->next = $7;
+    }
+    | WHILE expr block {
+        $$ = make_node(NODE_WHILE, NULL, 0, 0, NULL, $2, $3);
+    }
+    | RETURN return_body ';' {
+        $$ = make_node(NODE_RETURN, NULL, 0, 0, NULL, $2, NULL);
+    }
+    | ';' {
+        $$ = NULL;
+    }
+    | block {
+        $$ = $1;
+    }
     ;
 
 op_else
-    : /* empty */
-    | ELSE block
+    : /* empty */ {
+        $$ = NULL;
+    }
+    | ELSE block {
+        $$ = $2;
+    }
     ;
 
 method_call
-    : ID '(' arg_list_opt ')'
+    : ID '(' arg_list_opt ')' {
+        $$ = make_node(NODE_CALL, $1, 0, 0, NULL, $3, NULL);
+        free($1);
+    }
     ;
 
 arg_list_opt
-    : /* empty */
-    | arg_list
+    : /* empty */ {
+        $$ = NULL;
+    }
+    | arg_list {
+        $$ = $1;
+    }
     ;
 
 arg_list
-    : expr
-    | arg_list ',' expr
+    : expr {
+        $$ = $1;
+    }
+    | arg_list ',' expr {
+        $1->next = $3;
+        $$ = $1;
+    }
     ;
 
 return_body
-    : /* empty */
-    | expr
+    : /* empty */ {
+        $$ = NULL;
+    }
+    | expr {
+        $$ = $1;
+    }
     ;
 
 type
-    : INTEGER_TYPE
-    | BOOL_TYPE
+    : INTEGER_TYPE {
+        $$ = make_node(NODE_TYPE, "integer",  0, 0, NULL, NULL, NULL);
+    }
+    | BOOL_TYPE {
+        $$ = make_node(NODE_TYPE, "bool",  0, 0, NULL, NULL, NULL);
+    }
     ;
 
 expr
-    : ID
-    | method_call
-    | literal
-    | expr '+' expr
-    | expr '-' expr
-    | expr '*' expr
-    | expr '/' expr
-    | expr '%' expr
-    | expr '<' expr
-    | expr '>' expr
-    | expr EQ expr
-    | expr AND expr
-    | expr OR expr
-    | '-' expr %prec UMINUS
-    | '!' expr
-    | '(' expr ')'
+    : ID {
+        $$ = make_node(NODE_ID, $1, 0, 0, NULL, NULL, NULL);
+        free($1);
+    }
+    | method_call {
+        $$ = $1;
+    }
+    | literal {
+        $$ = $1;
+    }
+    | expr '+' expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "+", $1, $3);
+    }
+    | expr '-' expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "-", $1, $3);
+    }
+    | expr '*' expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "*", $1, $3);
+    }
+    | expr '/' expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "/", $1, $3);
+    }
+    | expr '%' expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "%", $1, $3);
+    }
+    | expr '<' expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "<", $1, $3);
+    }
+    | expr '>' expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, ">", $1, $3);
+    }
+    | expr EQ expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "==", $1, $3);
+    }
+    | expr AND expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "&&", $1, $3);
+    }
+    | expr OR expr {
+        $$ = make_node(NODE_BINOP, NULL, 0, 0, "||", $1, $3);
+    }
+    | '-' expr %prec UMINUS {
+        $$ = make_node(NODE_UNOP, NULL, 0, 0, "-", $2, NULL);
+    }
+    | '!' expr {
+        $$ = make_node(NODE_UNOP, NULL, 0, 0, "!", $2, NULL);
+    }
+    | '(' expr ')' {
+        $$ = $2;
+    }
     ;
 
 literal
-    : INT_LIT
-    | BOOL_LIT
+    : INT_LIT {
+        $$ = make_node(NODE_INT, NULL, $1, 0, NULL, NULL, NULL);
+    }
+    | BOOL_LIT {
+        $$ = make_node(NODE_BOOL, NULL, 0, $1, NULL, NULL, NULL);
+    }
     ;
 %%
 
-int main(void) { return yyparse(); }
+int main(int argc, char **argv) {
+    if (argc > 1) {
+        FILE *file = fopen(argv[1], "r");
+        if (!file) {
+            perror(argv[1]);
+            return 1;
+        }
+        yyin = file;
+    } else {
+        printf("Uso: ./compiler <archivo_de_entrada>\n");
+        return 1;
+    }
+
+    if (yyparse() == 0) {
+        printf("Parsing completado con éxito.\n");
+        printf("\n--- Abstract Syntax Tree ---\n");
+        print_ast(root, 0, 1);
+    } else {
+        printf("\nParsing fallido.\n");
+    }
+
+    return 0;
+}
 
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
