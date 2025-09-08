@@ -32,13 +32,15 @@ AST *root = NULL;
 %type <ast> op_else method_call arg_list_opt arg_list
 %type <ast> param_list_opt param_list method_body
 
-%right '!' UMINUS
 %left OR
 %left AND
 %left EQ
 %left '<' '>'
 %left '+' '-'
 %left '*' '/' '%'
+%right '!'
+%right UMINUS
+
 
 %%
 
