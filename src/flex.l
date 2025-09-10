@@ -31,8 +31,8 @@ digito  [0-9]
 {digito}+           { yylval.ival = atoi(yytext); return INT_LIT; } 
 {letra}({letra}|{digito}|_)*  { yylval.sval = strdup(yytext); return ID; }
  
-"//".*;
-"/*"([^*]|\n|(\*+[^*/]))*"*/"
+"//".* { }
+"/*"([^*]|\n|(\*+[^*/]))*"*/" { }
 
 "&&"                { return AND; }
 "||"                { return OR; }

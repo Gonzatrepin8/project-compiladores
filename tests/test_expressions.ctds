@@ -1,0 +1,12 @@
+// Prueba de expresiones y precedencia
+program {
+    void main() {
+        integer x = 0;
+        integer y = 0;
+        bool z = true;
+
+        x = 10 * (5 + 2) - 3;
+        y = 100 / 10 % 3;
+        z = x > y && (y == 1 || false);
+    }
+}
