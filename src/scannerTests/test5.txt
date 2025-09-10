@@ -1,3 +1,0 @@
-// esto es un comentario
-program // otro comentario
-extern

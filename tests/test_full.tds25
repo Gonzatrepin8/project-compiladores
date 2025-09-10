@@ -1,0 +1,21 @@
+/*
+ * Un programa completo que calcula el factorial de un número.
+ * Adaptado a la sintaxis de TDS25.
+ */
+program {
+    integer factorial(integer n) {
+        if (n == 0) then {
+            return 1;
+        } else {
+            return n * factorial(n - 1);
+        }
+    }
+
+    void main() {
+        integer num = 3;
+        integer result = 10;
+        
+        num = 5;
+        result = factorial(num);
+    }
+}

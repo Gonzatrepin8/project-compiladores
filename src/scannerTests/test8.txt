@@ -1,5 +1,0 @@
-if (a == true) then {
-    return a + 1;
-} else {
-    return 0;
-}
