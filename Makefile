@@ -33,7 +33,7 @@ test: $(EXEC)
 	for testfile in $(TESTDIR)/*; do \
 		if [ -f $$testfile ]; then \
 			echo "Running test: $$testfile"; \
-			if ! ./$(EXEC) < $$testfile; then \
+			if ! ./$(EXEC) $$testfile; then \
 				echo "Test failed: $$testfile"; \
 				failed=1; \
 			fi; \

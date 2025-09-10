@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "parser.tab.h"
+
+extern int debug_mode;
 %}
 
 %token PROGRAM EXTERN BOOL_TYPE ELSE THEN FALSE IF INTEGER_TYPE RETURN TRUE VOID WHILE
@@ -144,7 +146,44 @@ literal
     ;
 %%
 
-int main(void) { return yyparse(); }
+extern FILE *yyin;
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s [-debug] <sourcefile>\n", argv[0]);
+        return 1;
+    }
+
+    int argi = 1;
+    if (strcmp(argv[1], "-debug") == 0) {
+        debug_mode = 1;
+        argi++;
+    }
+
+    if (argi >= argc) {
+        fprintf(stderr, "No input file given.\n");
+        return 1;
+    }
+
+    yyin = fopen(argv[argi], "r");
+    if (!yyin) {
+        perror("fopen");
+        return 1;
+    }
+
+    int result = yyparse();
+
+    if (debug_mode) {
+        if (result == 0) {
+            printf("Scanner: SUCCESS\n");
+        } else {
+            printf("Scanner: FAILED\n");
+        }
+    }
+
+    fclose(yyin);
+    return result;
+}
 
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
