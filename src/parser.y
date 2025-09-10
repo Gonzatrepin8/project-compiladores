@@ -28,9 +28,10 @@ AST *root = NULL;
 %token <sval> ID
 
 %type <ast> program expr literal var_decls var_decl stmt stmt_list
-%type <ast> method_decls method_decl block type return_body
+%type <ast> method_decls method_decl block return_body
 %type <ast> op_else method_call arg_list_opt arg_list
 %type <ast> param_list_opt param_list method_body
+%type <sval> type
 
 %left OR
 %left AND
@@ -64,10 +65,7 @@ program
     ;
 
 var_decls
-    : /* empty */ {
-        $$ = NULL;
-    }
-    | var_decl {
+    : var_decl {
         $$ = $1;
     }
     | var_decls var_decl {
@@ -84,7 +82,14 @@ var_decls
 
 var_decl
     : type ID '=' expr ';' {
-        $$ = make_node(NODE_ASSIGN, NULL, 0, 0, NULL, make_node(NODE_VAR_DECL, $2, 0, 0, NULL, $1, NULL), $4);
+        AST* id_node = make_node(NODE_ID, $2, 0, 0, NULL, NULL, NULL);
+        AST* assign_node = make_node(NODE_ASSIGN, NULL, 0, 0, NULL, id_node, $4);
+        $$ = make_node(NODE_VAR_DECL, $2, 0, 0, NULL, NULL, assign_node);
+        if (strcmp((char*)$1, "integer") == 0) {
+            $$->info->eval_type = TYPE_INT;
+        } else if (strcmp((char*)$1, "bool") == 0) {
+            $$->info->eval_type = TYPE_BOOL;
+        }
         free($2);
     }
     ;
@@ -107,14 +112,27 @@ method_decls
 
 method_decl
     : type ID '(' param_list_opt ')' method_body {
-        AST* params_and_body = make_node(NODE_BLOCK, "params_and_body", 0, 0, NULL, $4, $6);
-        $$ = make_node(NODE_FUNCTION, $2, 0, 0, NULL, $1, params_and_body);
+        $$ = make_node(NODE_FUNCTION, $2, 0, 0, NULL, $4, $6);
+        if (strcmp((char*)$1, "integer") == 0) {
+            $$->info->eval_type = TYPE_INT;
+        } else if (strcmp((char*)$1, "bool") == 0) {
+            $$->info->eval_type = TYPE_BOOL;
+        }
         free($2);
     }
     | VOID ID '(' param_list_opt ')' method_body {
-        AST* params_and_body = make_node(NODE_BLOCK, "params_and_body", 0, 0, NULL, $4, $6);
-        $$ = make_node(NODE_FUNCTION, $2, 0, 0, NULL, make_node(NODE_TYPE, "void", 0, 0, NULL, NULL, NULL), params_and_body);
+        $$ = make_node(NODE_FUNCTION, $2, 0, 0, NULL, $4, $6);
+        $$->info->eval_type = TYPE_VOID;
         free($2);
+    }
+    ;
+
+method_body
+    : block {
+        $$ = $1;
+    }
+    | EXTERN ';' {
+        $$ = make_node(NODE_ID, "EXTERN", 0, 0, NULL, NULL, NULL);
     }
     ;
 
@@ -129,25 +147,17 @@ param_list_opt
 
 param_list
     : type ID {
-        $$ = make_node(NODE_PARAM, $2, 0, 0, NULL, $1, NULL);
+        $$ = make_node(NODE_PARAM, $2, 0, 0, NULL, NULL, NULL);
         free($2);
     }
     | param_list ',' type ID {
-        AST* new_param = make_node(NODE_PARAM, $4, 0, 0, NULL, $3, NULL);
+        AST* new_param = make_node(NODE_PARAM, $4, 0, 0, NULL, NULL, NULL);
         free($4);
         $1->next = new_param;
         $$ = $1;
     }
     ;
 
-method_body
-    : block {
-        $$ = $1;
-    }
-    | EXTERN ';' {
-        $$ = make_node(NODE_ID, "EXTERN", 0, 0, NULL, NULL, NULL);
-    }
-    ;
 
 block
     : '{' var_decls stmt_list '}' {
@@ -247,13 +257,9 @@ return_body
     ;
 
 type
-    : INTEGER_TYPE {
-        $$ = make_node(NODE_TYPE, "integer",  0, 0, NULL, NULL, NULL);
-    }
-    | BOOL_TYPE {
-        $$ = make_node(NODE_TYPE, "bool",  0, 0, NULL, NULL, NULL);
-    }
-    ;
+    : INTEGER_TYPE { $$ = strdup("integer"); }
+    | BOOL_TYPE    { $$ = strdup("bool"); }
+
 
 expr
     : ID {
@@ -326,7 +332,7 @@ int main(int argc, char **argv) {
         }
         yyin = file;
     } else {
-        printf("Uso: ./compiler <archivo_de_entrada>\n");
+        printf("Uso: %s <archivo_de_entrada>\n", argv[0]);
         return 1;
     }
 
