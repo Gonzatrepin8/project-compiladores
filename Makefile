@@ -29,9 +29,15 @@ clean:
 .PHONY: test
 test: $(EXEC)
 	@echo "Running tests..."
-	@for testfile in $(TESTDIR)/*; do \
+	@failed=0; \
+	for testfile in $(TESTDIR)/*; do \
 		if [ -f $$testfile ]; then \
 			echo "Running test: $$testfile"; \
-			./$(EXEC) < $$testfile; \
-		fi \
-	done
+			if ! ./$(EXEC) < $$testfile; then \
+				echo "Test failed: $$testfile"; \
+				failed=1; \
+			fi; \
+		fi; \
+	done; \
+	exit $$failed
+
