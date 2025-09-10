@@ -24,7 +24,6 @@ AST *make_node(NodeType type, char *name, int ival, int bval,
     n->info->op = op ? strdup(op) : NULL;
 
     n->info->eval_type = TYPE_UNKNOWN;
-    n->info->initialized = 0;
 
     n->left = left;
     n->right = right;
@@ -54,7 +53,6 @@ void print_ast(AST *node, int depth, int is_last) {
         case NODE_BLOCK:    printf("BLOCK\n"); break;
         case NODE_PROG:     printf("PROGRAM\n"); break;
         case NODE_CALL:     printf("CALL(%s)\n", node->info->name); break;
-        case NODE_TYPE:     printf("TYPE(%s)\n", node->info->name); break;
         case NODE_PARAM:    printf("PARAM(%s)\n", node->info->name); break;
         default:            printf("UKNOWN_NODE(%d)\n", node->type);
     }
