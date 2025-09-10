@@ -528,9 +528,10 @@ char *yytext;
 #include <string.h>
 #include <stdio.h>
 #include "parser.tab.h"
+#include "ast.h"
 
-#line 532 "src/lex.yy.c"
 #line 533 "src/lex.yy.c"
+#line 534 "src/lex.yy.c"
 
 #define INITIAL 0
 
@@ -747,10 +748,10 @@ YY_DECL
 		}
 
 	{
-#line 16 "src/flex.l"
+#line 17 "src/flex.l"
 
 
-#line 753 "src/lex.yy.c"
+#line 754 "src/lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -819,129 +820,129 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 18 "src/flex.l"
+#line 19 "src/flex.l"
 { return EXTERN; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 19 "src/flex.l"
+#line 20 "src/flex.l"
 { return PROGRAM; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 20 "src/flex.l"
+#line 21 "src/flex.l"
 { return ELSE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 21 "src/flex.l"
+#line 22 "src/flex.l"
 { return THEN; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 22 "src/flex.l"
+#line 23 "src/flex.l"
 { return IF; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 23 "src/flex.l"
+#line 24 "src/flex.l"
 { return RETURN; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 24 "src/flex.l"
+#line 25 "src/flex.l"
 { return VOID; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 25 "src/flex.l"
+#line 26 "src/flex.l"
 { return INTEGER_TYPE; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 26 "src/flex.l"
+#line 27 "src/flex.l"
 { return BOOL_TYPE; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 27 "src/flex.l"
+#line 28 "src/flex.l"
 { return WHILE; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 28 "src/flex.l"
+#line 29 "src/flex.l"
 { yylval.bval = 1; return BOOL_LIT; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 29 "src/flex.l"
+#line 30 "src/flex.l"
 { yylval.bval = 0; return BOOL_LIT; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 30 "src/flex.l"
+#line 31 "src/flex.l"
 { yylval.ival = atoi(yytext); return INT_LIT; } 
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 31 "src/flex.l"
+#line 32 "src/flex.l"
 { yylval.sval = strdup(yytext); return ID; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 33 "src/flex.l"
+#line 34 "src/flex.l"
 { }
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 34 "src/flex.l"
+#line 35 "src/flex.l"
 { }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 36 "src/flex.l"
+#line 37 "src/flex.l"
 { return AND; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 37 "src/flex.l"
+#line 38 "src/flex.l"
 { return OR; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 38 "src/flex.l"
+#line 39 "src/flex.l"
 { return EQ; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 40 "src/flex.l"
+#line 41 "src/flex.l"
 { return *yytext; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 42 "src/flex.l"
+#line 43 "src/flex.l"
 { return *yytext; }
 	YY_BREAK
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 46 "src/flex.l"
+#line 47 "src/flex.l"
 ;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 48 "src/flex.l"
+#line 49 "src/flex.l"
 {
 fprintf(stderr, "Lexical Error at line %d: Unrecognized character '%s'\n", yylineno, yytext);
 }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 52 "src/flex.l"
+#line 53 "src/flex.l"
 ECHO;
 	YY_BREAK
-#line 944 "src/lex.yy.c"
+#line 945 "src/lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1958,6 +1959,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 52 "src/flex.l"
+#line 53 "src/flex.l"
 
 
