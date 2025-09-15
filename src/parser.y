@@ -327,9 +327,11 @@ literal
 
 extern FILE *yyin;
 extern FILE *lexout;
+FILE *semout;
 FILE *sintout;
 char lex_filename[256];
 char sint_filename[256];
+char sent_filename[256];
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -393,6 +395,7 @@ int main(int argc, char **argv) {
     fclose(yyin);
     fclose(lexout);
     fclose(sintout);
+    fclose(semout);
 
     if (debug_mode) {
         FILE *f = fopen(lex_filename, "r");
@@ -408,6 +411,14 @@ int main(int argc, char **argv) {
             printf("---- Parser Output (%s) ----\n", sint_filename);
             char c;
             while ((c = fgetc(f)) != EOF) putchar(c);
+            fclose(f);
+        }
+
+        f = fopen(sent_filename, "r");
+        if(f) {
+            printf("---- AST (%s) ----\n", sent_filename);
+            char c;
+            while((c = fgetc(f)) != EOF) putchar(c);
             fclose(f);
         }
     }
