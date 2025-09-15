@@ -6,16 +6,11 @@
 #include "parser.tab.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "ast.h"
 
 extern int debug_mode;
 int yylex(void);
 void yyerror(const char *s);
-%}
-
-void yyerror(const char *s);
-int yylex(void);
-extern int yylineno;
-extern FILE *yyin;
 
 AST *root = NULL;
 %}

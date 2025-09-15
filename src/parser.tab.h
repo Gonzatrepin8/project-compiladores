@@ -86,8 +86,9 @@ union YYSTYPE
     int ival;
     int bval;
     char* sval;
+    struct AST *ast;
 
-#line 91 "src/parser.tab.h"
+#line 92 "src/parser.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
