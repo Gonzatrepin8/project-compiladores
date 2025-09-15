@@ -8,8 +8,8 @@
 #include <sys/types.h>
 
 extern int debug_mode;
-extern void yyerror();
-extern int yylex();
+int yylex(void);
+void yyerror(const char *s);
 %}
 
 %token PROGRAM EXTERN BOOL_TYPE ELSE THEN FALSE IF INTEGER_TYPE RETURN TRUE VOID WHILE

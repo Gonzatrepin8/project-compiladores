@@ -78,8 +78,10 @@
 #include <sys/types.h>
 
 extern int debug_mode;
+int yylex(void);
+void yyerror(const char *s);
 
-#line 83 "src/parser.tab.c"
+#line 85 "src/parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -551,12 +553,12 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    38,    38,    39,    40,    41,    45,    46,    50,    54,
-      55,    59,    60,    64,    65,    69,    70,    74,    75,    79,
-      80,    84,    85,    89,    90,    91,    92,    93,    94,    95,
-      99,   100,   104,   108,   109,   113,   114,   118,   119,   123,
-     124,   128,   129,   130,   131,   132,   133,   134,   135,   136,
-     137,   138,   139,   140,   141,   142,   143,   147,   148
+       0,    40,    40,    41,    42,    43,    47,    48,    52,    56,
+      57,    61,    62,    66,    67,    71,    72,    76,    77,    81,
+      82,    86,    87,    91,    92,    93,    94,    95,    96,    97,
+     101,   102,   106,   110,   111,   115,   116,   120,   121,   125,
+     126,   130,   131,   132,   133,   134,   135,   136,   137,   138,
+     139,   140,   141,   142,   143,   144,   145,   149,   150
 };
 #endif
 
@@ -1209,7 +1211,7 @@ yyreduce:
   switch (yyn)
     {
 
-#line 1213 "src/parser.tab.c"
+#line 1215 "src/parser.tab.c"
 
       default: break;
     }
@@ -1402,7 +1404,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 150 "src/parser.y"
+#line 152 "src/parser.y"
 
 
 extern FILE *yyin;
