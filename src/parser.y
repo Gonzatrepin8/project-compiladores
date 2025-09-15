@@ -155,10 +155,17 @@ param_list
     | param_list ',' type ID {
         AST* new_param = make_node(NODE_PARAM, $4, 0, 0, NULL, NULL, NULL);
         free($4);
-        $1->next = new_param;
+
+        AST* tail = $1;
+        while (tail->nex
+            tail = tail->next;
+        }
+        tail->next = new_param;
+
         $$ = $1;
     }
     ;
+
 
 
 block
