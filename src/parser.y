@@ -157,7 +157,7 @@ param_list
         free($4);
 
         AST* tail = $1;
-        while (tail->nex
+        while (tail->next){
             tail = tail->next;
         }
         tail->next = new_param;
@@ -165,7 +165,6 @@ param_list
         $$ = $1;
     }
     ;
-
 
 
 block
