@@ -2,6 +2,7 @@
 #define AST_H
 
 #include <stdio.h>
+#include "parser.tab.h"
 
 typedef enum {
     NODE_INT,

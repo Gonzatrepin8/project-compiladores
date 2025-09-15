@@ -3,6 +3,8 @@
 #include <string.h>
 #include "ast.h"
 
+extern FILE *semout;
+
 AST *make_node(NodeType type, char *name, int ival, int bval,
                char* op, AST *left, AST *right) {
     AST *n = malloc(sizeof(AST));
@@ -35,26 +37,26 @@ AST *make_node(NodeType type, char *name, int ival, int bval,
 void print_ast(AST *node, int depth, int is_last) {
     if (!node) return;
 
-    for (int i = 0; i < depth-1; i++) printf("│   ");
-    if (depth > 0) printf(is_last ? "└── " : "├── ");
+    for (int i = 0; i < depth-1; i++) fprintf(semout, "│   ");
+    if (depth > 0) fprintf(semout, is_last ? "└── " : "├── ");
 
     switch (node->type) {
-        case NODE_INT:      printf("INT(%d)\n", node->info->ival); break;
-        case NODE_BOOL:     printf("BOOL(%s)\n", (node->info->bval) ? "TRUE" : "FALSE"); break;
-        case NODE_ID:       printf("ID(%s)\n", node->info->name); break;
-        case NODE_BINOP:    printf("BINOP(%s)\n", node->info->op); break;
-        case NODE_UNOP:     printf("UNOP(%s)\n", node->info->op); break;
-        case NODE_VAR_DECL: printf("VAR_DECL(%s)\n", node->info->name); break;
-        case NODE_ASSIGN:   printf("ASSIGN\n"); break;
-        case NODE_RETURN:   printf("RETURN\n"); break;
-        case NODE_IF:       printf("IF\n"); break;
-        case NODE_WHILE:    printf("WHILE\n"); break;
-        case NODE_FUNCTION: printf("FUNCTION(%s)\n", node->info->name); break;
-        case NODE_BLOCK:    printf("BLOCK\n"); break;
-        case NODE_PROG:     printf("PROGRAM\n"); break;
-        case NODE_CALL:     printf("CALL(%s)\n", node->info->name); break;
-        case NODE_PARAM:    printf("PARAM(%s)\n", node->info->name); break;
-        default:            printf("UKNOWN_NODE(%d)\n", node->type);
+        case NODE_INT:      fprintf(semout, "INT(%d)\n", node->info->ival); break;
+        case NODE_BOOL:     fprintf(semout, "BOOL(%s)\n", (node->info->bval) ? "TRUE" : "FALSE"); break;
+        case NODE_ID:       fprintf(semout, "ID(%s)\n", node->info->name); break;
+        case NODE_BINOP:    fprintf(semout, "BINOP(%s)\n", node->info->op); break;
+        case NODE_UNOP:     fprintf(semout, "UNOP(%s)\n", node->info->op); break;
+        case NODE_VAR_DECL: fprintf(semout, "VAR_DECL(%s)\n", node->info->name); break;
+        case NODE_ASSIGN:   fprintf(semout, "ASSIGN\n"); break;
+        case NODE_RETURN:   fprintf(semout, "RETURN\n"); break;
+        case NODE_IF:       fprintf(semout, "IF\n"); break;
+        case NODE_WHILE:    fprintf(semout, "WHILE\n"); break;
+        case NODE_FUNCTION: fprintf(semout, "FUNCTION(%s)\n", node->info->name); break;
+        case NODE_BLOCK:    fprintf(semout, "BLOCK\n"); break;
+        case NODE_PROG:     fprintf(semout, "PROGRAM\n"); break;
+        case NODE_CALL:     fprintf(semout, "CALL(%s)\n", node->info->name); break;
+        case NODE_PARAM:    fprintf(semout, "PARAM(%s)\n", node->info->name); break;
+        default:            fprintf(semout, "UKNOWN_NODE(%d)\n", node->type);
     }
 
     AST* children[2] = {node->left, node->right};

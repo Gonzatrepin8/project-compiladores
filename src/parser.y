@@ -375,11 +375,13 @@ int main(int argc, char **argv) {
 
     snprintf(lex_filename, sizeof(lex_filename), "output/%s.lex", base);
     snprintf(sint_filename, sizeof(sint_filename), "output/%s.sint", base);
+    snprintf(sent_filename, sizeof(sent_filename), "output/%s.sem", base);
 
     lexout = fopen(lex_filename, "w");
     sintout = fopen(sint_filename, "w");
+    semout = fopen(sent_filename, "w");
 
-    if (!lexout || !sintout) {
+    if (!lexout || !sintout || !semout) {
         perror("fopen");
         return 1;
     }
@@ -388,6 +390,9 @@ int main(int argc, char **argv) {
 
     if (result == 0) {
         fprintf(sintout, "Parser: SUCCESS\n");
+        if (root) {
+            print_ast(root, 0, 1);
+        }
     } else {
         fprintf(sintout, "Parser: FAILED\n");
     }
