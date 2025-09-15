@@ -530,8 +530,9 @@ char *yytext;
 #include "parser.tab.h"
 
 int debug_mode = 0;
-#line 533 "src/lex.yy.c"
+FILE *lexout;
 #line 534 "src/lex.yy.c"
+#line 535 "src/lex.yy.c"
 
 #define INITIAL 0
 
@@ -748,10 +749,10 @@ YY_DECL
 		}
 
 	{
-#line 17 "src/flex.l"
+#line 18 "src/flex.l"
 
 
-#line 754 "src/lex.yy.c"
+#line 755 "src/lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -820,145 +821,145 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 19 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: EXTERN\n"); return EXTERN; }
+#line 20 "src/flex.l"
+{ fprintf(lexout, "TOKEN: EXTERN\n"); return EXTERN; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 20 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: PROGRAM\n"); return PROGRAM; }
+#line 21 "src/flex.l"
+{ fprintf(lexout, "TOKEN: PROGRAM\n"); return PROGRAM; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 21 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: ELSE\n"); return ELSE; }
+#line 22 "src/flex.l"
+{ fprintf(lexout, "TOKEN: ELSE\n"); return ELSE; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 22 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: THEN\n"); return THEN; }
+#line 23 "src/flex.l"
+{ fprintf(lexout, "TOKEN: THEN\n"); return THEN; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 23 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: IF\n"); return IF; }
+#line 24 "src/flex.l"
+{ fprintf(lexout, "TOKEN: IF\n"); return IF; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 24 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: RETURN\n"); return RETURN; }
+#line 25 "src/flex.l"
+{ fprintf(lexout, "TOKEN: RETURN\n"); return RETURN; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 25 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: VOID\n"); return VOID; }
+#line 26 "src/flex.l"
+{ fprintf(lexout, "TOKEN: VOID\n"); return VOID; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 26 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: INTEGER_TYPE\n"); return INTEGER_TYPE; }
+#line 27 "src/flex.l"
+{ fprintf(lexout, "TOKEN: INTEGER_TYPE\n"); return INTEGER_TYPE; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 27 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: BOOL_TYPE\n"); return BOOL_TYPE; }
+#line 28 "src/flex.l"
+{ fprintf(lexout, "TOKEN: BOOL_TYPE\n"); return BOOL_TYPE; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 28 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: WHILE\n"); return WHILE; }
+#line 29 "src/flex.l"
+{ fprintf(lexout, "TOKEN: WHILE\n"); return WHILE; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 29 "src/flex.l"
+#line 30 "src/flex.l"
 {
     yylval.bval = 1;
-    if (debug_mode) printf("TOKEN: BOOL_LIT (true)\n");
+    fprintf(lexout, "TOKEN: BOOL_LIT (true)\n");
     return BOOL_LIT;
 }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 34 "src/flex.l"
+#line 35 "src/flex.l"
 {
     yylval.bval = 0;
-    if (debug_mode) printf("TOKEN: BOOL_LIT (false)\n");
+    fprintf(lexout, "TOKEN: BOOL_LIT (false)\n");
     return BOOL_LIT;
 }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 39 "src/flex.l"
+#line 40 "src/flex.l"
 {
     yylval.ival = atoi(yytext);
-    if (debug_mode) printf("TOKEN: INT_LIT (%d)\n", yylval.ival);
+    fprintf(lexout, "TOKEN: INT_LIT (%d)\n", yylval.ival);
     return INT_LIT;
 }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 45 "src/flex.l"
+#line 46 "src/flex.l"
 {
     yylval.sval = strdup(yytext);
-    if (debug_mode) printf("TOKEN: ID (%s)\n", yylval.sval);
+    fprintf(lexout, "TOKEN: ID (%s)\n", yylval.sval);
     return ID;
 }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 51 "src/flex.l"
+#line 52 "src/flex.l"
 { }
 	YY_BREAK
 case 16:
 /* rule 16 can match eol */
 YY_RULE_SETUP
-#line 52 "src/flex.l"
+#line 53 "src/flex.l"
 { }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 54 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: AND\n"); return AND; }
+#line 55 "src/flex.l"
+{ fprintf(lexout, "TOKEN: AND\n"); return AND; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 55 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: OR\n");  return OR; }
+#line 56 "src/flex.l"
+{ fprintf(lexout, "TOKEN: OR\n");  return OR; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 56 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: EQ\n");  return EQ; }
+#line 57 "src/flex.l"
+{ fprintf(lexout, "TOKEN: EQ\n");  return EQ; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 58 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: OPERATOR (%s)\n", yytext); return *yytext; }
+#line 59 "src/flex.l"
+{ fprintf(lexout, "TOKEN: OPERATOR (%s)\n", yytext); return *yytext; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 59 "src/flex.l"
-{ if (debug_mode) printf("TOKEN: SYMBOL (%s)\n", yytext);   return *yytext; }
+#line 60 "src/flex.l"
+{ fprintf(lexout, "TOKEN: SYMBOL (%s)\n", yytext);   return *yytext; }
 	YY_BREAK
 case 22:
 /* rule 22 can match eol */
 YY_RULE_SETUP
-#line 63 "src/flex.l"
+#line 64 "src/flex.l"
 ;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 65 "src/flex.l"
+#line 66 "src/flex.l"
 {
 fprintf(stderr, "Lexical Error at line %d: Unrecognized character '%s'\n", yylineno, yytext);
 }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 69 "src/flex.l"
+#line 70 "src/flex.l"
 ECHO;
 	YY_BREAK
-#line 961 "src/lex.yy.c"
+#line 962 "src/lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1975,6 +1976,6 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 69 "src/flex.l"
+#line 70 "src/flex.l"
 
 
