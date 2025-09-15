@@ -1,8 +1,11 @@
 %{
+#include <libgen.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "parser.tab.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 
 extern int debug_mode;
 %}
@@ -147,6 +150,10 @@ literal
 %%
 
 extern FILE *yyin;
+extern FILE *lexout;
+FILE *sintout;
+char lex_filename[256];
+char sint_filename[256];
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -171,17 +178,64 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    int result = yyparse();
+    const char *inputfile = argv[argi];
 
-    if (debug_mode) {
-        if (result == 0) {
-            printf("Scanner: SUCCESS\n");
-        } else {
-            printf("Scanner: FAILED\n");
+    struct stat st = {0};
+    if (stat("output", &st) == -1) {
+        if (mkdir("output", 0700) != 0) {
+            perror("mkdir");
+            return 1;
         }
     }
 
+    char base[256];
+    strncpy(base, basename((char *)inputfile), sizeof(base) - 1);
+    base[sizeof(base) - 1] = '\0';
+
+    char *dot = strrchr(base, '.');
+    if (dot) *dot = '\0';
+
+    snprintf(lex_filename, sizeof(lex_filename), "output/%s.lex", base);
+    snprintf(sint_filename, sizeof(sint_filename), "output/%s.sint", base);
+
+    lexout = fopen(lex_filename, "w");
+    sintout = fopen(sint_filename, "w");
+
+    if (!lexout || !sintout) {
+        perror("fopen");
+        return 1;
+    }
+
+    int result = yyparse();
+
+    if (result == 0) {
+        fprintf(sintout, "Parser: SUCCESS\n");
+    } else {
+        fprintf(sintout, "Parser: FAILED\n");
+    }
+
     fclose(yyin);
+    fclose(lexout);
+    fclose(sintout);
+
+    if (debug_mode) {
+        FILE *f = fopen(lex_filename, "r");
+        if (f) {
+            printf("---- Lexer Output (%s) ----\n", lex_filename);
+            char c;
+            while ((c = fgetc(f)) != EOF) putchar(c);
+            fclose(f);
+        }
+
+        f = fopen(sint_filename, "r");
+        if (f) {
+            printf("---- Parser Output (%s) ----\n", sint_filename);
+            char c;
+            while ((c = fgetc(f)) != EOF) putchar(c);
+            fclose(f);
+        }
+    }
+
     return result;
 }
 
