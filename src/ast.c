@@ -55,7 +55,7 @@ void print_ast(AST *node, int depth, int is_last) {
         case NODE_BLOCK:    fprintf(semout, "BLOCK\n"); break;
         case NODE_PROG:     fprintf(semout, "PROGRAM\n"); break;
         case NODE_CALL:     fprintf(semout, "CALL(%s)\n", node->info->name); break;
-        case NODE_PARAM:    fprintf(semout, "PARAM(%s)\n", node->info->name); break;
+        case NODE_PARAM:    fprintf(semout, "PARAM(%s, %s)\n", type_to_string(node->info->eval_type), node->info->name); break;
         default:            fprintf(semout, "UKNOWN_NODE(%d)\n", node->type);
     }
 

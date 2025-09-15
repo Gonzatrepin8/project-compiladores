@@ -150,10 +150,20 @@ param_list_opt
 param_list
     : type ID {
         $$ = make_node(NODE_PARAM, $2, 0, 0, NULL, NULL, NULL);
+        if (strcmp((char*)$1, "integer") == 0) {
+            $$->info->eval_type = TYPE_INT;
+        } else if (strcmp((char*)$1, "bool") == 0) {
+            $$->info->eval_type = TYPE_BOOL;
+        }
         free($2);
     }
     | param_list ',' type ID {
         AST* new_param = make_node(NODE_PARAM, $4, 0, 0, NULL, NULL, NULL);
+        if (strcmp((char*)$3, "integer") == 0) {
+            new_param->info->eval_type = TYPE_INT;
+        } else if (strcmp((char*)$3, "bool") == 0) {
+            new_param->info->eval_type = TYPE_BOOL;
+        }
         free($4);
 
         AST* tail = $1;
