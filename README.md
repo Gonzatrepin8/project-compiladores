@@ -1,14 +1,28 @@
 # Taller y Diseño de Software
-This repository has a Makefile that you can use to compile our compiler. You can run this Makefile script with the command
+
+This repository has a Makefile that you can use to compile our compiler. You can run this Makefile script with the command:
 
 ```bash
 make
 ```
 
-This command will create an executable file `executable` in the root directory. This is the compiler program.
+This command will create an executable file `c-tds` in the root directory. This is the compiler program.
 
 If you run this program with no arguments it receives an input where you can type your program, or you can pass as argument a file path. Example:
+
 ```bash
-./executable program.c
+./c-tds program.ctds
 ```
-This will show in the console the ast, symbol table, interpreter and the assembly code corresponding to the input program.
+This check whether the input program is parsed successfully or not.
+
+### Running Tests
+
+To run the parser tests simply use:
+
+```bash
+make test
+```
+
+### First Release
+
+In branch: primera-entrega

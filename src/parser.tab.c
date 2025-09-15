@@ -69,20 +69,19 @@
 /* First part of user prologue.  */
 #line 1 "src/parser.y"
 
+#include <libgen.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include "parser.tab.h"
-#include "ast.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 
-void yyerror(const char *s);
+extern int debug_mode;
 int yylex(void);
-extern int yylineno;
-extern FILE *yyin;
+void yyerror(const char *s);
 
-AST *root = NULL;
-
-#line 86 "src/parser.tab.c"
+#line 85 "src/parser.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -153,9 +152,9 @@ enum yysymbol_kind_t
   YYSYMBOL_var_decl = 40,                  /* var_decl  */
   YYSYMBOL_method_decls = 41,              /* method_decls  */
   YYSYMBOL_method_decl = 42,               /* method_decl  */
-  YYSYMBOL_method_body = 43,               /* method_body  */
-  YYSYMBOL_param_list_opt = 44,            /* param_list_opt  */
-  YYSYMBOL_param_list = 45,                /* param_list  */
+  YYSYMBOL_param_list_opt = 43,            /* param_list_opt  */
+  YYSYMBOL_param_list = 44,                /* param_list  */
+  YYSYMBOL_method_body = 45,               /* method_body  */
   YYSYMBOL_block = 46,                     /* block  */
   YYSYMBOL_stmt_list = 47,                 /* stmt_list  */
   YYSYMBOL_stmt = 48,                      /* stmt  */
@@ -552,14 +551,14 @@ static const yytype_int8 yytranslate[] =
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int16 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    49,    49,    53,    57,    61,    68,    71,    84,    98,
-     101,   114,   123,   131,   134,   140,   143,   149,   153,   163,
-     166,   172,   175,   190,   194,   197,   201,   204,   207,   210,
-     216,   219,   225,   232,   235,   241,   244,   251,   254,   260,
-     261,   265,   269,   272,   275,   278,   281,   284,   287,   290,
-     293,   296,   299,   302,   305,   308,   311,   317,   320
+       0,    40,    40,    41,    42,    43,    47,    48,    52,    56,
+      57,    61,    62,    66,    67,    71,    72,    76,    77,    81,
+      82,    86,    87,    91,    92,    93,    94,    95,    96,    97,
+     101,   102,   106,   110,   111,   115,   116,   120,   121,   125,
+     126,   130,   131,   132,   133,   134,   135,   136,   137,   138,
+     139,   140,   141,   142,   143,   144,   145,   149,   150
 };
 #endif
 
@@ -580,8 +579,8 @@ static const char *const yytname[] =
   "TRUE", "VOID", "WHILE", "EQ", "AND", "OR", "INT_LIT", "BOOL_LIT", "ID",
   "'<'", "'>'", "'+'", "'-'", "'*'", "'/'", "'%'", "'!'", "UMINUS", "'{'",
   "'}'", "'='", "';'", "'('", "')'", "','", "$accept", "program",
-  "var_decls", "var_decl", "method_decls", "method_decl", "method_body",
-  "param_list_opt", "param_list", "block", "stmt_list", "stmt", "op_else",
+  "var_decls", "var_decl", "method_decls", "method_decl", "param_list_opt",
+  "param_list", "method_body", "block", "stmt_list", "stmt", "op_else",
   "method_call", "arg_list_opt", "arg_list", "return_body", "type", "expr",
   "literal", YY_NULLPTR
 };
@@ -628,13 +627,13 @@ static const yytype_int8 yydefact[] =
 {
        0,     0,     0,     0,     1,    40,    39,     0,     5,     0,
        6,     0,     9,     0,     0,     3,     7,     0,     4,    10,
-       0,     0,    15,     2,     0,     0,    15,     0,    16,     0,
+       0,     0,    13,     2,     0,     0,    13,     0,    14,     0,
       57,    58,    41,     0,     0,     0,    42,     0,    43,     0,
-       0,     0,    17,    33,    54,    55,     0,     0,     0,     0,
+       0,     0,    15,    33,    54,    55,     0,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     8,     0,     0,
-      21,    12,    13,     0,     0,    34,    35,    56,    51,    52,
-      53,    49,    50,    44,    45,    46,    47,    48,    11,    14,
-      21,     0,     0,    18,    32,     0,     0,     0,    37,     0,
+      21,    12,    17,     0,     0,    34,    35,    56,    51,    52,
+      53,    49,    50,    44,    45,    46,    47,    48,    11,    18,
+      21,     0,     0,    16,    32,     0,     0,     0,    37,     0,
        0,    20,    28,    29,    22,     0,     0,    36,    19,     0,
        0,    38,     0,     0,    24,     0,    27,    26,     0,     0,
       23,     0,    30,     0,    25,    31
@@ -643,14 +642,14 @@ static const yytype_int8 yydefact[] =
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -76,   -76,    69,    -9,   121,    -3,    76,   109,   -76,   -75,
+     -76,   -76,    69,    -9,   121,    -3,   109,   -76,    76,   -75,
       68,   -76,   -76,   -35,   -76,   -76,   -76,    15,   -31,   -76
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     2,     9,    10,    11,    12,    61,    27,    28,    62,
+       0,     2,     9,    10,    11,    12,    27,    28,    61,    62,
       81,    94,   114,    36,    64,    65,   100,    13,    37,    38
 };
 
@@ -717,12 +716,12 @@ static const yytype_int8 yystos[] =
 {
        0,     3,    38,    30,     0,     5,    10,    13,    31,    39,
       40,    41,    42,    54,    20,    31,    40,    41,    31,    42,
-      54,    20,    34,    31,    20,    32,    34,    44,    45,    54,
-      18,    19,    20,    24,    28,    34,    50,    55,    56,    44,
+      54,    20,    34,    31,    20,    32,    34,    43,    44,    54,
+      18,    19,    20,    24,    28,    34,    50,    55,    56,    43,
       35,    36,    20,    34,    55,    55,    55,    15,    16,    17,
       21,    22,    23,    24,    25,    26,    27,    33,    35,     4,
-      30,    43,    46,    54,    51,    52,    55,    35,    55,    55,
-      55,    55,    55,    55,    55,    55,    55,    55,    43,    33,
+      30,    45,    46,    54,    51,    52,    55,    35,    55,    55,
+      55,    55,    55,    55,    55,    55,    55,    55,    45,    33,
       39,    47,    54,    20,    35,    36,    47,     9,    11,    14,
       20,    31,    33,    46,    48,    50,    20,    55,    31,    34,
       53,    55,    55,    32,    33,    55,    33,    46,    55,    35,
@@ -744,7 +743,7 @@ static const yytype_int8 yyr1[] =
 static const yytype_int8 yyr2[] =
 {
        0,     2,     5,     4,     4,     3,     1,     2,     5,     1,
-       2,     6,     6,     1,     2,     0,     1,     2,     4,     4,
+       2,     6,     6,     0,     1,     2,     4,     1,     2,     4,
        3,     0,     2,     4,     2,     7,     3,     3,     1,     1,
        0,     2,     4,     0,     1,     1,     3,     0,     1,     1,
        1,     1,     1,     1,     3,     3,     3,     3,     3,     3,
@@ -1211,512 +1210,8 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 2: /* program: PROGRAM '{' var_decls method_decls '}'  */
-#line 49 "src/parser.y"
-                                             {
-        (yyval.ast) = make_node(NODE_PROG, NULL, 0, 0, NULL, (yyvsp[-2].ast), (yyvsp[-1].ast));
-        root = (yyval.ast);
-    }
-#line 1221 "src/parser.tab.c"
-    break;
 
-  case 3: /* program: PROGRAM '{' var_decls '}'  */
-#line 53 "src/parser.y"
-                                {
-        (yyval.ast) = make_node(NODE_PROG, NULL, 0, 0, NULL, (yyvsp[-1].ast), NULL);
-        root = (yyval.ast);
-    }
-#line 1230 "src/parser.tab.c"
-    break;
-
-  case 4: /* program: PROGRAM '{' method_decls '}'  */
-#line 57 "src/parser.y"
-                                   {
-        (yyval.ast) = make_node(NODE_PROG, NULL, 0, 0, NULL, NULL, (yyvsp[-1].ast));
-        root = (yyval.ast);
-    }
-#line 1239 "src/parser.tab.c"
-    break;
-
-  case 5: /* program: PROGRAM '{' '}'  */
-#line 61 "src/parser.y"
-                      {
-        (yyval.ast) = make_node(NODE_PROG, NULL, 0, 0, NULL, NULL, NULL);
-        root = (yyval.ast);
-    }
-#line 1248 "src/parser.tab.c"
-    break;
-
-  case 6: /* var_decls: var_decl  */
-#line 68 "src/parser.y"
-               {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1256 "src/parser.tab.c"
-    break;
-
-  case 7: /* var_decls: var_decls var_decl  */
-#line 71 "src/parser.y"
-                         {
-        AST *temp = (yyvsp[-1].ast);
-        if(temp) {
-            while(temp->next) temp = temp->next;
-            temp->next = (yyvsp[0].ast);
-            (yyval.ast) = (yyvsp[-1].ast);
-        } else {
-            (yyval.ast) = (yyvsp[0].ast);
-        }
-    }
-#line 1271 "src/parser.tab.c"
-    break;
-
-  case 8: /* var_decl: type ID '=' expr ';'  */
-#line 84 "src/parser.y"
-                           {
-        AST* id_node = make_node(NODE_ID, (yyvsp[-3].sval), 0, 0, NULL, NULL, NULL);
-        AST* assign_node = make_node(NODE_ASSIGN, NULL, 0, 0, NULL, id_node, (yyvsp[-1].ast));
-        (yyval.ast) = make_node(NODE_VAR_DECL, (yyvsp[-3].sval), 0, 0, NULL, NULL, assign_node);
-        if (strcmp((char*)(yyvsp[-4].sval), "integer") == 0) {
-            (yyval.ast)->info->eval_type = TYPE_INT;
-        } else if (strcmp((char*)(yyvsp[-4].sval), "bool") == 0) {
-            (yyval.ast)->info->eval_type = TYPE_BOOL;
-        }
-        free((yyvsp[-3].sval));
-    }
-#line 1287 "src/parser.tab.c"
-    break;
-
-  case 9: /* method_decls: method_decl  */
-#line 98 "src/parser.y"
-                  {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1295 "src/parser.tab.c"
-    break;
-
-  case 10: /* method_decls: method_decls method_decl  */
-#line 101 "src/parser.y"
-                               {
-        AST *temp = (yyvsp[-1].ast);
-        if (temp) {
-            while(temp->next) temp = temp->next;
-            temp->next = (yyvsp[0].ast);
-            (yyval.ast) = (yyvsp[-1].ast);
-        } else {
-            (yyval.ast) = (yyvsp[0].ast);
-        }
-    }
-#line 1310 "src/parser.tab.c"
-    break;
-
-  case 11: /* method_decl: type ID '(' param_list_opt ')' method_body  */
-#line 114 "src/parser.y"
-                                                 {
-        (yyval.ast) = make_node(NODE_FUNCTION, (yyvsp[-4].sval), 0, 0, NULL, (yyvsp[-2].ast), (yyvsp[0].ast));
-        if (strcmp((char*)(yyvsp[-5].sval), "integer") == 0) {
-            (yyval.ast)->info->eval_type = TYPE_INT;
-        } else if (strcmp((char*)(yyvsp[-5].sval), "bool") == 0) {
-            (yyval.ast)->info->eval_type = TYPE_BOOL;
-        }
-        free((yyvsp[-4].sval));
-    }
-#line 1324 "src/parser.tab.c"
-    break;
-
-  case 12: /* method_decl: VOID ID '(' param_list_opt ')' method_body  */
-#line 123 "src/parser.y"
-                                                 {
-        (yyval.ast) = make_node(NODE_FUNCTION, (yyvsp[-4].sval), 0, 0, NULL, (yyvsp[-2].ast), (yyvsp[0].ast));
-        (yyval.ast)->info->eval_type = TYPE_VOID;
-        free((yyvsp[-4].sval));
-    }
-#line 1334 "src/parser.tab.c"
-    break;
-
-  case 13: /* method_body: block  */
-#line 131 "src/parser.y"
-            {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1342 "src/parser.tab.c"
-    break;
-
-  case 14: /* method_body: EXTERN ';'  */
-#line 134 "src/parser.y"
-                 {
-        (yyval.ast) = make_node(NODE_ID, "EXTERN", 0, 0, NULL, NULL, NULL);
-    }
-#line 1350 "src/parser.tab.c"
-    break;
-
-  case 15: /* param_list_opt: %empty  */
-#line 140 "src/parser.y"
-                  {
-        (yyval.ast) = NULL;
-    }
-#line 1358 "src/parser.tab.c"
-    break;
-
-  case 16: /* param_list_opt: param_list  */
-#line 143 "src/parser.y"
-                 {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1366 "src/parser.tab.c"
-    break;
-
-  case 17: /* param_list: type ID  */
-#line 149 "src/parser.y"
-              {
-        (yyval.ast) = make_node(NODE_PARAM, (yyvsp[0].sval), 0, 0, NULL, NULL, NULL);
-        free((yyvsp[0].sval));
-    }
-#line 1375 "src/parser.tab.c"
-    break;
-
-  case 18: /* param_list: param_list ',' type ID  */
-#line 153 "src/parser.y"
-                             {
-        AST* new_param = make_node(NODE_PARAM, (yyvsp[0].sval), 0, 0, NULL, NULL, NULL);
-        free((yyvsp[0].sval));
-        (yyvsp[-3].ast)->next = new_param;
-        (yyval.ast) = (yyvsp[-3].ast);
-    }
-#line 1386 "src/parser.tab.c"
-    break;
-
-  case 19: /* block: '{' var_decls stmt_list '}'  */
-#line 163 "src/parser.y"
-                                  {
-        (yyval.ast) = make_node(NODE_BLOCK, NULL, 0, 0, NULL, (yyvsp[-2].ast), (yyvsp[-1].ast));
-    }
-#line 1394 "src/parser.tab.c"
-    break;
-
-  case 20: /* block: '{' stmt_list '}'  */
-#line 166 "src/parser.y"
-                        {
-        (yyval.ast) = make_node(NODE_BLOCK, NULL, 0, 0, NULL, NULL, (yyvsp[-1].ast));
-    }
-#line 1402 "src/parser.tab.c"
-    break;
-
-  case 21: /* stmt_list: %empty  */
-#line 172 "src/parser.y"
-                  {
-        (yyval.ast) = NULL;
-    }
-#line 1410 "src/parser.tab.c"
-    break;
-
-  case 22: /* stmt_list: stmt_list stmt  */
-#line 175 "src/parser.y"
-                     {
-        if ((yyvsp[-1].ast) == NULL) {
-            (yyval.ast) = (yyvsp[0].ast);
-        } else if ((yyvsp[0].ast) != NULL) {
-            AST *temp = (yyvsp[-1].ast);
-            while(temp->next) temp = temp->next;
-            temp->next = (yyvsp[0].ast);
-            (yyval.ast) = (yyvsp[-1].ast);
-        } else {
-            (yyval.ast) = (yyvsp[-1].ast);
-        }
-    }
-#line 1427 "src/parser.tab.c"
-    break;
-
-  case 23: /* stmt: ID '=' expr ';'  */
-#line 190 "src/parser.y"
-                      {
-        (yyval.ast) = make_node(NODE_ASSIGN, NULL, 0, 0, NULL, make_node(NODE_ID, (yyvsp[-3].sval), 0, 0, NULL, NULL, NULL), (yyvsp[-1].ast));
-        free((yyvsp[-3].sval));
-    }
-#line 1436 "src/parser.tab.c"
-    break;
-
-  case 24: /* stmt: method_call ';'  */
-#line 194 "src/parser.y"
-                      {
-        (yyval.ast) = (yyvsp[-1].ast);
-    }
-#line 1444 "src/parser.tab.c"
-    break;
-
-  case 25: /* stmt: IF '(' expr ')' THEN block op_else  */
-#line 197 "src/parser.y"
-                                         {
-        (yyval.ast) = make_node(NODE_IF, NULL, 0, 0, NULL, (yyvsp[-4].ast), (yyvsp[-1].ast));
-        if ((yyvsp[-1].ast)) (yyvsp[-1].ast)->next = (yyvsp[0].ast);
-    }
-#line 1453 "src/parser.tab.c"
-    break;
-
-  case 26: /* stmt: WHILE expr block  */
-#line 201 "src/parser.y"
-                       {
-        (yyval.ast) = make_node(NODE_WHILE, NULL, 0, 0, NULL, (yyvsp[-1].ast), (yyvsp[0].ast));
-    }
-#line 1461 "src/parser.tab.c"
-    break;
-
-  case 27: /* stmt: RETURN return_body ';'  */
-#line 204 "src/parser.y"
-                             {
-        (yyval.ast) = make_node(NODE_RETURN, NULL, 0, 0, NULL, (yyvsp[-1].ast), NULL);
-    }
-#line 1469 "src/parser.tab.c"
-    break;
-
-  case 28: /* stmt: ';'  */
-#line 207 "src/parser.y"
-          {
-        (yyval.ast) = NULL;
-    }
-#line 1477 "src/parser.tab.c"
-    break;
-
-  case 29: /* stmt: block  */
-#line 210 "src/parser.y"
-            {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1485 "src/parser.tab.c"
-    break;
-
-  case 30: /* op_else: %empty  */
-#line 216 "src/parser.y"
-                  {
-        (yyval.ast) = NULL;
-    }
-#line 1493 "src/parser.tab.c"
-    break;
-
-  case 31: /* op_else: ELSE block  */
-#line 219 "src/parser.y"
-                 {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1501 "src/parser.tab.c"
-    break;
-
-  case 32: /* method_call: ID '(' arg_list_opt ')'  */
-#line 225 "src/parser.y"
-                              {
-        (yyval.ast) = make_node(NODE_CALL, (yyvsp[-3].sval), 0, 0, NULL, (yyvsp[-1].ast), NULL);
-        free((yyvsp[-3].sval));
-    }
-#line 1510 "src/parser.tab.c"
-    break;
-
-  case 33: /* arg_list_opt: %empty  */
-#line 232 "src/parser.y"
-                  {
-        (yyval.ast) = NULL;
-    }
-#line 1518 "src/parser.tab.c"
-    break;
-
-  case 34: /* arg_list_opt: arg_list  */
-#line 235 "src/parser.y"
-               {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1526 "src/parser.tab.c"
-    break;
-
-  case 35: /* arg_list: expr  */
-#line 241 "src/parser.y"
-           {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1534 "src/parser.tab.c"
-    break;
-
-  case 36: /* arg_list: arg_list ',' expr  */
-#line 244 "src/parser.y"
-                        {
-        (yyvsp[-2].ast)->next = (yyvsp[0].ast);
-        (yyval.ast) = (yyvsp[-2].ast);
-    }
-#line 1543 "src/parser.tab.c"
-    break;
-
-  case 37: /* return_body: %empty  */
-#line 251 "src/parser.y"
-                  {
-        (yyval.ast) = NULL;
-    }
-#line 1551 "src/parser.tab.c"
-    break;
-
-  case 38: /* return_body: expr  */
-#line 254 "src/parser.y"
-           {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1559 "src/parser.tab.c"
-    break;
-
-  case 39: /* type: INTEGER_TYPE  */
-#line 260 "src/parser.y"
-                   { (yyval.sval) = strdup("integer"); }
-#line 1565 "src/parser.tab.c"
-    break;
-
-  case 40: /* type: BOOL_TYPE  */
-#line 261 "src/parser.y"
-                   { (yyval.sval) = strdup("bool"); }
-#line 1571 "src/parser.tab.c"
-    break;
-
-  case 41: /* expr: ID  */
-#line 265 "src/parser.y"
-         {
-        (yyval.ast) = make_node(NODE_ID, (yyvsp[0].sval), 0, 0, NULL, NULL, NULL);
-        free((yyvsp[0].sval));
-    }
-#line 1580 "src/parser.tab.c"
-    break;
-
-  case 42: /* expr: method_call  */
-#line 269 "src/parser.y"
-                  {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1588 "src/parser.tab.c"
-    break;
-
-  case 43: /* expr: literal  */
-#line 272 "src/parser.y"
-              {
-        (yyval.ast) = (yyvsp[0].ast);
-    }
-#line 1596 "src/parser.tab.c"
-    break;
-
-  case 44: /* expr: expr '+' expr  */
-#line 275 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "+", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1604 "src/parser.tab.c"
-    break;
-
-  case 45: /* expr: expr '-' expr  */
-#line 278 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "-", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1612 "src/parser.tab.c"
-    break;
-
-  case 46: /* expr: expr '*' expr  */
-#line 281 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "*", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1620 "src/parser.tab.c"
-    break;
-
-  case 47: /* expr: expr '/' expr  */
-#line 284 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "/", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1628 "src/parser.tab.c"
-    break;
-
-  case 48: /* expr: expr '%' expr  */
-#line 287 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "%", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1636 "src/parser.tab.c"
-    break;
-
-  case 49: /* expr: expr '<' expr  */
-#line 290 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "<", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1644 "src/parser.tab.c"
-    break;
-
-  case 50: /* expr: expr '>' expr  */
-#line 293 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, ">", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1652 "src/parser.tab.c"
-    break;
-
-  case 51: /* expr: expr EQ expr  */
-#line 296 "src/parser.y"
-                   {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "==", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1660 "src/parser.tab.c"
-    break;
-
-  case 52: /* expr: expr AND expr  */
-#line 299 "src/parser.y"
-                    {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "&&", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1668 "src/parser.tab.c"
-    break;
-
-  case 53: /* expr: expr OR expr  */
-#line 302 "src/parser.y"
-                   {
-        (yyval.ast) = make_node(NODE_BINOP, NULL, 0, 0, "||", (yyvsp[-2].ast), (yyvsp[0].ast));
-    }
-#line 1676 "src/parser.tab.c"
-    break;
-
-  case 54: /* expr: '-' expr  */
-#line 305 "src/parser.y"
-                            {
-        (yyval.ast) = make_node(NODE_UNOP, NULL, 0, 0, "-", (yyvsp[0].ast), NULL);
-    }
-#line 1684 "src/parser.tab.c"
-    break;
-
-  case 55: /* expr: '!' expr  */
-#line 308 "src/parser.y"
-               {
-        (yyval.ast) = make_node(NODE_UNOP, NULL, 0, 0, "!", (yyvsp[0].ast), NULL);
-    }
-#line 1692 "src/parser.tab.c"
-    break;
-
-  case 56: /* expr: '(' expr ')'  */
-#line 311 "src/parser.y"
-                   {
-        (yyval.ast) = (yyvsp[-1].ast);
-    }
-#line 1700 "src/parser.tab.c"
-    break;
-
-  case 57: /* literal: INT_LIT  */
-#line 317 "src/parser.y"
-              {
-        (yyval.ast) = make_node(NODE_INT, NULL, (yyvsp[0].ival), 0, NULL, NULL, NULL);
-    }
-#line 1708 "src/parser.tab.c"
-    break;
-
-  case 58: /* literal: BOOL_LIT  */
-#line 320 "src/parser.y"
-               {
-        (yyval.ast) = make_node(NODE_BOOL, NULL, 0, (yyvsp[0].bval), NULL, NULL, NULL);
-    }
-#line 1716 "src/parser.tab.c"
-    break;
-
-
-#line 1720 "src/parser.tab.c"
+#line 1215 "src/parser.tab.c"
 
       default: break;
     }
@@ -1909,31 +1404,97 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 324 "src/parser.y"
+#line 152 "src/parser.y"
 
+
+extern FILE *yyin;
+extern FILE *lexout;
+FILE *sintout;
+char lex_filename[256];
+char sint_filename[256];
 
 int main(int argc, char **argv) {
-    if (argc > 1) {
-        FILE *file = fopen(argv[1], "r");
-        if (!file) {
-            perror(argv[1]);
-            return 1;
-        }
-        yyin = file;
-    } else {
-        printf("Uso: %s <archivo_de_entrada>\n", argv[0]);
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s [-debug] <sourcefile>\n", argv[0]);
         return 1;
     }
 
-    if (yyparse() == 0) {
-        printf("Parsing completado con éxito.\n");
-        printf("\n--- Abstract Syntax Tree ---\n");
-        print_ast(root, 0, 1);
-    } else {
-        printf("\nParsing fallido.\n");
+    int argi = 1;
+    if (strcmp(argv[1], "-debug") == 0) {
+        debug_mode = 1;
+        argi++;
     }
 
-    return 0;
+    if (argi >= argc) {
+        fprintf(stderr, "No input file given.\n");
+        return 1;
+    }
+
+    yyin = fopen(argv[argi], "r");
+    if (!yyin) {
+        perror("fopen");
+        return 1;
+    }
+
+    const char *inputfile = argv[argi];
+
+    struct stat st = {0};
+    if (stat("output", &st) == -1) {
+        if (mkdir("output", 0700) != 0) {
+            perror("mkdir");
+            return 1;
+        }
+    }
+
+    char base[256];
+    strncpy(base, basename((char *)inputfile), sizeof(base) - 1);
+    base[sizeof(base) - 1] = '\0';
+
+    char *dot = strrchr(base, '.');
+    if (dot) *dot = '\0';
+
+    snprintf(lex_filename, sizeof(lex_filename), "output/%s.lex", base);
+    snprintf(sint_filename, sizeof(sint_filename), "output/%s.sint", base);
+
+    lexout = fopen(lex_filename, "w");
+    sintout = fopen(sint_filename, "w");
+
+    if (!lexout || !sintout) {
+        perror("fopen");
+        return 1;
+    }
+
+    int result = yyparse();
+
+    if (result == 0) {
+        fprintf(sintout, "Parser: SUCCESS\n");
+    } else {
+        fprintf(sintout, "Parser: FAILED\n");
+    }
+
+    fclose(yyin);
+    fclose(lexout);
+    fclose(sintout);
+
+    if (debug_mode) {
+        FILE *f = fopen(lex_filename, "r");
+        if (f) {
+            printf("---- Lexer Output (%s) ----\n", lex_filename);
+            char c;
+            while ((c = fgetc(f)) != EOF) putchar(c);
+            fclose(f);
+        }
+
+        f = fopen(sint_filename, "r");
+        if (f) {
+            printf("---- Parser Output (%s) ----\n", sint_filename);
+            char c;
+            while ((c = fgetc(f)) != EOF) putchar(c);
+            fclose(f);
+        }
+    }
+
+    return result;
 }
 
 void yyerror(const char *s) {
