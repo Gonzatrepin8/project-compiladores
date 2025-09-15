@@ -5,6 +5,8 @@
 #include "parser.tab.h"
 
 extern int debug_mode;
+extern void yyerror();
+extern int yylex();
 %}
 
 %token PROGRAM EXTERN BOOL_TYPE ELSE THEN FALSE IF INTEGER_TYPE RETURN TRUE VOID WHILE
