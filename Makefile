@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wno-error=implicit-function-declaration
+CFLAGS = -Wno-error=implicit-function-declaration -Wno-format-truncation
 SRCDIR = src
 TESTDIR = tests
 
