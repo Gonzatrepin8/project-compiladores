@@ -51,15 +51,15 @@ AST *root = NULL;
 
 program
     : PROGRAM '{' var_decls method_decls '}' {
-        $$ = make_node(NODE_PROG, NULL, 0, 0, $3, $4, NULL);
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, $4);
         root = $$;
     }
     | PROGRAM '{' var_decls '}' {
-        $$ = make_node(NODE_PROG, NULL, 0, 0, $3, NULL, NULL);
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, NULL);
         root = $$;
     }
     | PROGRAM '{' method_decls '}' {
-        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, NULL);
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, NULL, $3);
         root = $$;
     }
     | PROGRAM '{' '}' {
