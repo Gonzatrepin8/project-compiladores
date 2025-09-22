@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "ast.h"
+#include "symbol_table/symtab.h"
+#include "symbol_table/build_symtab.h"
 
 extern int debug_mode;
 int yylex(void);
@@ -49,15 +51,15 @@ AST *root = NULL;
 
 program
     : PROGRAM '{' var_decls method_decls '}' {
-        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, $4);
+        $$ = make_node(NODE_PROG, NULL, 0, 0, $3, $4, NULL);
         root = $$;
     }
     | PROGRAM '{' var_decls '}' {
-        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, NULL);
+        $$ = make_node(NODE_PROG, NULL, 0, 0, $3, NULL, NULL);
         root = $$;
     }
     | PROGRAM '{' method_decls '}' {
-        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, NULL, $3);
+        $$ = make_node(NODE_PROG, NULL, 0, 0, NULL, $3, NULL);
         root = $$;
     }
     | PROGRAM '{' '}' {
@@ -442,6 +444,17 @@ int main(int argc, char **argv) {
             while((c = fgetc(f)) != EOF) putchar(c);
             fclose(f);
         }
+        
+        SymTab *global = symtab_new();
+
+        TypeInfo result = build_symtab(root, global);
+        symtab_print(global);
+        
+        if (result == TYPE_UNKNOWN) {
+            printf("Create symbol table success.\n");
+        } else {
+            printf("Failed to create symbol table.\n");
+        }
     }
 
     return result;
@@ -450,4 +463,3 @@ int main(int argc, char **argv) {
 void yyerror(const char *s) {
     fprintf(stderr, "Error: %s\n", s);
 }
-

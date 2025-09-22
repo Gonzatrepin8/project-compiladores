@@ -86,3 +86,12 @@ void symtab_set_value(SymTab *st, const char *name, int value) {
     }
     fprintf(stderr, "Error: assignment to undeclared variable '%s'\n", name);
 }
+
+void symtab_print_scope(SymTab *st) {
+    printf("Scope level %d:\n", st->level);
+    for (Symbol *s = st->head; s != NULL; s = s->next) {
+        printf("  Name: %s, Type: %s\n",
+               s->info->name,
+               type_to_string(s->info->eval_type));
+    }
+}

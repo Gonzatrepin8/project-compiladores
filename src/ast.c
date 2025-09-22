@@ -73,8 +73,9 @@ void print_ast(AST *node, int depth, int is_last) {
 
 const char* type_to_string(TypeInfo t) {
     switch (t) {
-        case TYPE_INT: return "int";
+        case TYPE_INT: return "integer";
         case TYPE_BOOL: return "bool";
+        case TYPE_VOID: return "void";
         case TYPE_UNKNOWN: return "unknown";
         case TYPE_ERROR: return "error";
         default: return "invalid";
