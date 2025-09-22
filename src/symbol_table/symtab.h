@@ -17,6 +17,7 @@ typedef struct Symbol {
 typedef struct SymTab {
     struct SymTab *parent;
     int level;
+    bool is_function;
     Symbol *head;
 } SymTab;
 

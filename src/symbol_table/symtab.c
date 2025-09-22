@@ -1,11 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include "symtab.h"
 
 SymTab *symtab_new(void) {
     SymTab *st = calloc(1, sizeof(SymTab));
     st->level = 0;
+    st->is_function = false;
     return st;
 }
 
@@ -39,12 +41,23 @@ TypeInfo symtab_scope(SymTab *st, const char *name) {
 }
 
 void symtab_print(SymTab *st) {
+    SymTab *stack[128];
+    int n = 0;
+    for (SymTab *scope = st; scope != NULL && n < 128; scope = scope->parent) {
+        stack[n++] = scope;
+    }
+
     printf("=== Symbol Table ===\n");
-    int scope_level = 0;
-    for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
-        printf("Scope level %d:\n", scope_level++);
-        for (Symbol *s = scope->head; s != NULL; s = s->next) {
-            printf("  Name: %s, Type: %s, value: %d\n", 
+    
+    for (int i = n - 1; i >= 0; --i) {
+        int level = (n - 1) - i; // 0 = global
+        printf("Scope level %d:\n", level);
+        Symbol *s = stack[i]->head;
+        if (!s) {
+            printf("  (empty)\n");
+        }
+        for (; s != NULL; s = s->next) {
+            printf("  Name: %s, Type: %s, value: %d\n",
                    s->info->name ? s->info->name : "(null)",
                    type_to_string(s->info->eval_type),
                    (s->info->eval_type == TYPE_INT) ? s->info->ival : s->info->bval);
@@ -52,6 +65,7 @@ void symtab_print(SymTab *st) {
     }
     printf("====================\n");
 }
+
 
 int symtab_get_value(SymTab *st, const char *name, int *found) {
     for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
