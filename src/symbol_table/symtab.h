@@ -1,7 +1,7 @@
 #ifndef SYMTAB_H
 #define SYMTAB_H
 
-#include "ast.h"
+#include "../ast.h"
 
 typedef enum {
     FUNCTION,

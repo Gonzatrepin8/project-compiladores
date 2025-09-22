@@ -71,7 +71,7 @@ int symtab_get_value(SymTab *st, const char *name, int *found) {
 }
 
 
-void symtab_set_value(SymTab *st, const char *name, int value, int is_interpreter) {
+void symtab_set_value(SymTab *st, const char *name, int value) {
     for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
         for (Symbol *s = scope->head; s != NULL; s = s->next) {
             if (strcmp(s->info->name, name) == 0) {
