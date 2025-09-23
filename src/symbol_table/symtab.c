@@ -40,30 +40,32 @@ TypeInfo symtab_scope(SymTab *st, const char *name) {
     return TYPE_ERROR;
 }
 
-void symtab_print(SymTab *st) {
+void symtab_print(SymTab *st, FILE *stream) {
+    if (!stream) return;
+
     SymTab *stack[128];
     int n = 0;
     for (SymTab *scope = st; scope != NULL && n < 128; scope = scope->parent) {
         stack[n++] = scope;
     }
 
-    printf("=== Symbol Table ===\n");
+    fprintf(stream, "=== Symbol Table ===\n");
     
     for (int i = n - 1; i >= 0; --i) {
         int level = (n - 1) - i; // 0 = global
-        printf("Scope level %d:\n", level);
+        fprintf(stream, "Scope level %d:\n", level);
         Symbol *s = stack[i]->head;
         if (!s) {
-            printf("  (empty)\n");
+            fprintf(stream, "  (empty)\n");
         }
         for (; s != NULL; s = s->next) {
-            printf("  Name: %s, Type: %s, value: %d\n",
+            fprintf(stream, "  Name: %s, Type: %s, value: %d\n",
                    s->info->name ? s->info->name : "(null)",
                    type_to_string(s->info->eval_type),
                    (s->info->eval_type == TYPE_INT) ? s->info->ival : s->info->bval);
         }
     }
-    printf("====================\n");
+    fprintf(stream, "====================\n");
 }
 
 

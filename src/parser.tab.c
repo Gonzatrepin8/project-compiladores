@@ -1937,9 +1937,11 @@ extern FILE *yyin;
 extern FILE *lexout;
 FILE *semout;
 FILE *sintout;
+FILE *symout;
 char lex_filename[256];
 char sint_filename[256];
 char sent_filename[256];
+char sym_filename[256];
 
 int main(int argc, char **argv) {
     if (argc < 2) {
@@ -1984,12 +1986,14 @@ int main(int argc, char **argv) {
     snprintf(lex_filename, sizeof(lex_filename), "output/%s.lex", base);
     snprintf(sint_filename, sizeof(sint_filename), "output/%s.sint", base);
     snprintf(sent_filename, sizeof(sent_filename), "output/%s.sem", base);
+    snprintf(sym_filename, sizeof(sym_filename), "output/%s.sym", base);
 
     lexout = fopen(lex_filename, "w");
     sintout = fopen(sint_filename, "w");
     semout = fopen(sent_filename, "w");
+    symout = fopen(sym_filename, "w");
 
-    if (!lexout || !sintout || !semout) {
+    if (!lexout || !sintout || !semout || !symout) {
         perror("fopen");
         return 1;
     }
@@ -2000,6 +2004,9 @@ int main(int argc, char **argv) {
         fprintf(sintout, "Parser: SUCCESS\n");
         if (root) {
             print_ast(root, 0, 1);
+            SymTab *global = symtab_new();
+            build_symtab(root, global, symout);
+            symtab_print(global, symout);
         }
     } else {
         fprintf(sintout, "Parser: FAILED\n");
@@ -2009,6 +2016,7 @@ int main(int argc, char **argv) {
     fclose(lexout);
     fclose(sintout);
     fclose(semout);
+    fclose(symout);
 
     if (debug_mode) {
         FILE *f = fopen(lex_filename, "r");
@@ -2034,17 +2042,21 @@ int main(int argc, char **argv) {
             while((c = fgetc(f)) != EOF) putchar(c);
             fclose(f);
         }
-        
-        SymTab *global = symtab_new();
 
-        TypeInfo result = build_symtab(root, global);
-        symtab_print(global);
+        f = fopen(sym_filename, "r");
+        if (f) {
+            printf("---- Symbol Table (%s) ----\n", sym_filename);
+            char c;
+            while((c = fgetc(f)) != EOF) putchar(c);
+            fclose(f);
+        }
         
-        if (result == TYPE_UNKNOWN) {
+        if (result == 0) {
             printf("Create symbol table success.\n");
         } else {
-            printf("Failed to create symbol table.\n");
+            printf("Failed to create symbol table due to parsing errors.\n");
         }
+        
     }
 
     return result;
