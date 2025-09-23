@@ -73,12 +73,12 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
         }
 
         case NODE_IF:
-            if (n->left) build_symtab(n->left, st);
+            if (n->left) build_symtab(n->left, st, stream);
 
-            if (n->right) build_symtab(n->right, st);
+            if (n->right) build_symtab(n->right, st, stream);
 
             if (n->right && n->right->next) {
-                build_symtab(n->right->next, st);
+                build_symtab(n->right->next, st, stream);
             }
             break;
 
