@@ -354,16 +354,43 @@ char sint_filename[256];
 char sent_filename[256];
 char sym_filename[256];
 
+typedef enum {
+    TARGET_FULL,
+    TARGET_SCAN,
+    TARGET_PARSE
+} TargetStage;
+
+TargetStage target_stage = TARGET_FULL;
+
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s [-debug] <sourcefile>\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-debug] [-target scan|parse] <sourcefile>\n", argv[0]);
         return 1;
     }
 
     int argi = 1;
-    if (strcmp(argv[1], "-debug") == 0) {
-        debug_mode = 1;
-        argi++;
+    while (argi < argc && argv[argi][0] == '-') {
+        if (strcmp(argv[argi], "-debug") == 0) {
+            debug_mode = 1;
+            argi++;
+        } else if (strcmp(argv[argi], "-target") == 0) {
+            if (argi + 1 >= argc) {
+                fprintf(stderr, "-target requires an argument (scan|parse)\n");
+                return 1;
+            }
+            if (strcmp(argv[argi+1], "scan") == 0) {
+                target_stage = TARGET_SCAN;
+            } else if (strcmp(argv[argi+1], "parse") == 0) {
+                target_stage = TARGET_PARSE;
+            } else {
+                fprintf(stderr, "Unknown target: %s (expected scan|parse)\n", argv[argi+1]);
+                return 1;
+            }
+            argi += 2;
+        } else {
+            fprintf(stderr, "Unknown option: %s\n", argv[argi]);
+            return 1;
+        }
     }
 
     if (argi >= argc) {
@@ -400,34 +427,50 @@ int main(int argc, char **argv) {
     snprintf(sym_filename, sizeof(sym_filename), "output/%s.sym", base);
 
     lexout = fopen(lex_filename, "w");
-    sintout = fopen(sint_filename, "w");
-    semout = fopen(sent_filename, "w");
-    symout = fopen(sym_filename, "w");
-
-    if (!lexout || !sintout || !semout || !symout) {
-        perror("fopen");
-        return 1;
+    if (!lexout) { perror("fopen lex"); return 1; }
+    if (target_stage >= TARGET_PARSE) {
+        sintout = fopen(sint_filename, "w");
+        if (!sintout) { perror("fopen sint"); return 1; }
+    }
+    if (target_stage == TARGET_FULL) {
+        semout = fopen(sent_filename, "w");
+        symout = fopen(sym_filename, "w");
+        if (!semout || !symout) { perror("fopen sem"); return 1; }
     }
 
-    int result = yyparse();
+    int result = 0;
 
-    if (result == 0) {
-        fprintf(sintout, "Parser: SUCCESS\n");
-        if (root) {
-            print_ast(root, 0, 1);
-            SymTab *global = symtab_new();
-            build_symtab(root, global, symout);
-            symtab_print(global, symout);
-        }
+    if (target_stage == TARGET_SCAN) {
+        while (yylex() != 0) { }
     } else {
-        fprintf(sintout, "Parser: FAILED\n");
+        result = yyparse();
+        if (target_stage >= TARGET_PARSE) {
+            if (result == 0) {
+                fprintf(sintout, "Parser: SUCCESS\n");
+            } else {
+                fprintf(sintout, "Parser: FAILED\n");
+            }
+        }
+
+        if (target_stage == TARGET_FULL && result == 0) {
+            if (root) {
+                print_ast(root, 0, 1);                // print AST to semout
+                SymTab *global = symtab_new();
+                build_symtab(root, global, symout);
+                symtab_print(global, symout);
+            }
+        }
     }
 
     fclose(yyin);
     fclose(lexout);
-    fclose(sintout);
-    fclose(semout);
-    fclose(symout);
+    if (target_stage >= TARGET_PARSE) {
+        fclose(sintout);
+    }
+    if (target_stage == TARGET_FULL) {
+        fclose(semout);
+        fclose(symout);
+    }
 
     if (debug_mode) {
         FILE *f = fopen(lex_filename, "r");
@@ -438,35 +481,40 @@ int main(int argc, char **argv) {
             fclose(f);
         }
 
-        f = fopen(sint_filename, "r");
-        if (f) {
-            printf("---- Parser Output (%s) ----\n", sint_filename);
-            char c;
-            while ((c = fgetc(f)) != EOF) putchar(c);
-            fclose(f);
+        if (target_stage >= TARGET_PARSE) {
+            f = fopen(sint_filename, "r");
+            if (f) {
+                printf("---- Parser Output (%s) ----\n", sint_filename);
+                char c;
+                while ((c = fgetc(f)) != EOF) putchar(c);
+                fclose(f);
+            }
         }
 
-        f = fopen(sent_filename, "r");
-        if(f) {
-            printf("---- AST (%s) ----\n", sent_filename);
-            char c;
-            while((c = fgetc(f)) != EOF) putchar(c);
-            fclose(f);
+        if (target_stage == TARGET_FULL) {
+            f = fopen(sent_filename, "r");
+            if(f) {
+                printf("---- AST (%s) ----\n", sent_filename);
+                char c;
+                while((c = fgetc(f)) != EOF) putchar(c);
+                fclose(f);
+            }
+
+            f = fopen(sym_filename, "r");
+            if (f) {
+                printf("---- Symbol Table (%s) ----\n", sym_filename);
+                char c;
+                while((c = fgetc(f)) != EOF) putchar(c);
+                fclose(f);
+            }
         }
 
-        f = fopen(sym_filename, "r");
-        if (f) {
-            printf("---- Symbol Table (%s) ----\n", sym_filename);
-            char c;
-            while((c = fgetc(f)) != EOF) putchar(c);
-            fclose(f);
-        }
         
-        if (result == 0) {
-            printf("Create symbol table success.\n");
-        } else {
-            printf("Failed to create symbol table due to parsing errors.\n");
-        }
+        // if (result == 0) {
+        //     printf("Create symbol table success.\n");
+        // } else {
+        //     printf("Failed to create symbol table due to parsing errors.\n");
+        // }
         
     }
 
