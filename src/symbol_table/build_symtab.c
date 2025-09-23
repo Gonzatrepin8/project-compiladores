@@ -3,6 +3,8 @@
 #include "../ast.h"
 #include "build_symtab.h"
 
+bool semantic_error = false;
+
 static void build_symtab_list(AST *n, SymTab *st, FILE *stream) {
     while (n) {
         build_symtab(n, st, stream);
@@ -51,6 +53,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
                 fprintf(stderr,
                         "Error: función '%s' ya declarada en este scope.\n",
                         n->info->name);
+                semantic_error = true;
             } else {
                 symtab_insert(st, n->info);
             }
@@ -83,25 +86,31 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             break;
 
         case NODE_PARAM:
-            if (symtab_scope(st, n->info->name) != TYPE_ERROR)
+            if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
                 fprintf(stderr, "Error: parámetro '%s' ya declarado.\n", n->info->name);
-            else
+                semantic_error = true;
+            } else {
                 symtab_insert(st, n->info);
+            }  
             break;
 
         case NODE_VAR_DECL:
-            if (symtab_scope(st, n->info->name) != TYPE_ERROR)
+            if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
                 fprintf(stderr, "Error: variable '%s' ya declarada.\n", n->info->name);
-            else
+                semantic_error = true;
+            } else {
                 symtab_insert(st, n->info);
+            }
             if (n->right) build_symtab(n->right, st, stream);
             break;
 
         case NODE_ASSIGN:
             if (n->left && n->left->info &&
-                symtab_lookup(st, n->left->info->name) == TYPE_ERROR)
+                symtab_lookup(st, n->left->info->name) == TYPE_ERROR) {
                 fprintf(stderr, "Error: asignación a variable no declarada '%s'.\n",
                         n->left->info->name);
+                semantic_error = true;
+            }
             if (n->right) build_symtab(n->right, st, stream);
             break;
 

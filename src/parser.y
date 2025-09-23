@@ -12,6 +12,7 @@
 #include "symbol_table/build_symtab.h"
 
 extern int debug_mode;
+extern bool semantic_error;
 int yylex(void);
 void yyerror(const char *s);
 
@@ -516,6 +517,10 @@ int main(int argc, char **argv) {
         //     printf("Failed to create symbol table due to parsing errors.\n");
         // }
         
+    }
+
+    if (semantic_error) {
+        return 1;
     }
 
     return result;

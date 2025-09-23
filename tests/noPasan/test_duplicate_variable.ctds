@@ -1,0 +1,6 @@
+program {
+    void main() {
+        integer x = 10;
+        bool x = true; // Error: 'x' ya está declarada en este scope
+    }
+}

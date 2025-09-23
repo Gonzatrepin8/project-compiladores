@@ -43,16 +43,46 @@ clean:
 
 .PHONY: test
 test: $(EXEC)
-	@echo "Running tests..."
+	@echo "========================================="
+	@echo "           RUNNING ALL TESTS"
+	@echo "========================================="
 	@failed=0; \
-	for testfile in $(TESTDIR)/*; do \
+	\
+	echo "\n--- Running tests that SHOULD PASS ---"; \
+	for testfile in $(TESTDIR)/pasan/*; do \
 		if [ -f $$testfile ]; then \
-			echo "Running test: $$testfile"; \
-			if ! ./$(EXEC) $$testfile; then \
-				echo "Test failed: $$testfile"; \
+			printf "Testing $$testfile... "; \
+			if ! ./$(EXEC) $$testfile > /dev/null 2>&1; then \
+				printf "\033[0;31m[FAIL]\033[0m\n"; \
+				echo "       > ERROR: This test was expected to pass, but the compiler failed."; \
 				failed=1; \
+			else \
+				printf "\033[0;32m[OK]\033[0m\n"; \
 			fi; \
 		fi; \
 	done; \
+	\
+	echo "\n--- Running tests that SHOULD FAIL ---"; \
+	for testfile in $(TESTDIR)/noPasan/*; do \
+		if [ -f $$testfile ]; then \
+			printf "Testing $$testfile... "; \
+			if ./$(EXEC) $$testfile > /dev/null 2>&1; then \
+				printf "\033[0;31m[FAIL]\033[0m\n"; \
+				echo "       > ERROR: This test was expected to fail, but the compiler succeeded."; \
+				failed=1; \
+			else \
+				printf "\033[0;32m[OK]\033[0m\n"; \
+			fi; \
+		fi; \
+	done; \
+	\
+	echo "\n========================================="; \
+	if [ "$$failed" -eq 0 ]; then \
+		echo "         \033[0;32mALL TESTS PASSED!\033[0m"; \
+	else \
+		echo "       \033[0;31mSOME TESTS FAILED\033[0m"; \
+	fi; \
+	echo "========================================="; \
 	exit $$failed
+
 

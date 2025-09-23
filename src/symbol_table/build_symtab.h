@@ -4,6 +4,9 @@
 #include "../ast.h"
 #include "symtab.h"
 #include <stdio.h>
+#include <stdbool.h>
+
+extern bool semantic_error;
 
 static void build_block(AST *blockNode, SymTab *parent, FILE *stream);
 TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream);
