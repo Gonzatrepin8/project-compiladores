@@ -11,9 +11,17 @@ static void build_symtab_list(AST *n, SymTab *st) {
 }
 
 static void build_block(AST *blockNode, SymTab *parent) {
-    // si el parent ya es scope de función, no crear hijo:
-    SymTab *target = (parent->is_function) ? parent : symtab_new();
-    if (!parent->is_function) {
+    SymTab *target;
+    // Si el scope padre es una función, usamos ese mismo scope para el bloque
+    // actual (el cuerpo de la función) y desactivamos el flag para futuros
+    // bloques anidados.
+    if (parent->is_function) {
+        target = parent;
+        parent->is_function = false;
+    } else {
+        // Si no es el bloque principal de una función, es un bloque anidado
+        // o global, por lo que creamos un nuevo scope.
+        target = symtab_new();
         target->parent = parent;
         target->level  = parent->level + 1;
     }
@@ -21,7 +29,7 @@ static void build_block(AST *blockNode, SymTab *parent) {
     if (blockNode->left)  build_symtab_list(blockNode->left, target);
     if (blockNode->right) build_symtab_list(blockNode->right, target);
 
-    symtab_print(target);
+    symtab_print(target);                                                                                                   
 }
 
 TypeInfo build_symtab(AST *n, SymTab *st) {
