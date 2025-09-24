@@ -40,6 +40,7 @@ typedef struct Info {
     char* name;
     int ival;
     int bval;
+    int scope;
     char* op;
     TypeInfo eval_type;
     int is_function;

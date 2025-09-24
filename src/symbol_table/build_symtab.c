@@ -13,7 +13,6 @@ static void build_symtab_list(AST *n, SymTab *st, FILE *stream) {
 
 static void build_block(AST *blockNode, SymTab *parent, FILE *stream) {
     SymTab *target;
-    
     if (parent->is_function) {
         target = parent;
         parent->is_function = false;
@@ -91,6 +90,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             } else {
                 symtab_insert(st, n->info);
             }
+            if (n->left) build_symtab(n->left, st, stream);
             if (n->right) build_symtab(n->right, st, stream);
             break;
 
@@ -101,7 +101,16 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
                         n->left->info->name);
                 semantic_error = true;
             }
+            if (n->left)  build_symtab(n->left, st, stream);
             if (n->right) build_symtab(n->right, st, stream);
+            break;
+        
+        case NODE_ID:
+            symtab_label_nodes(st, n->info->name, n);
+            break;
+        
+        case NODE_CALL:
+            symtab_label_nodes(st, n->info->name, n);
             break;
 
         default:

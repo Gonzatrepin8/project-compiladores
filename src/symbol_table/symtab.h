@@ -31,6 +31,6 @@ void symtab_print(SymTab *st, FILE *stream);
 void symtab_print_scope(SymTab *st);
 int symtab_get_value(SymTab *st, const char *name, int *found);
 void symtab_set_value(SymTab *st, const char *name, int value);
-
+void symtab_label_nodes(SymTab *st, const char *name, AST *node);
 
 #endif
