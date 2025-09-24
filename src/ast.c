@@ -24,7 +24,7 @@ AST *make_node(NodeType type, char *name, int ival, int bval,
     n->info->ival = ival;
     n->info->bval = bval;
     n->info->op = op ? strdup(op) : NULL;
-
+    n->info->scope = -1;
     n->info->eval_type = TYPE_UNKNOWN;
 
     n->left = left;
@@ -43,7 +43,7 @@ void print_ast(AST *node, int depth, int is_last) {
     switch (node->type) {
         case NODE_INT:      fprintf(semout, "INT(%d)\n", node->info->ival); break;
         case NODE_BOOL:     fprintf(semout, "BOOL(%s)\n", (node->info->bval) ? "TRUE" : "FALSE"); break;
-        case NODE_ID:       fprintf(semout, "ID(%s)\n", node->info->name); break;
+        case NODE_ID:       fprintf(semout, "ID(%s) scope = (%d)\n", node->info->name, node->info->scope); break;
         case NODE_BINOP:    fprintf(semout, "BINOP(%s)\n", node->info->op); break;
         case NODE_UNOP:     fprintf(semout, "UNOP(%s)\n", node->info->op); break;
         case NODE_VAR_DECL: fprintf(semout, "VAR_DECL(%s)\n", node->info->name); break;

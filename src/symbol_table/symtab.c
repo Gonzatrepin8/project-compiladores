@@ -14,6 +14,7 @@ SymTab *symtab_new(void) {
 void symtab_insert(SymTab *st, Info *info) {
     Symbol *s = calloc(1, sizeof(Symbol));
     struct SymTab *parent;
+    info->scope = st->level;
     s->info = info;
     s->next = st->head;
     st->head = s;
@@ -109,5 +110,17 @@ void symtab_print_scope(SymTab *st) {
         printf("  Name: %s, Type: %s\n",
                s->info->name,
                type_to_string(s->info->eval_type));
+    }
+}
+
+void symtab_label_nodes(SymTab *st, const char *name, AST *node){
+    for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
+        for (Symbol *s = scope->head; s != NULL; s = s->next) {
+            if (strcmp(s->info->name, name) == 0) {
+                s->info->scope = scope->level;
+                node->info = s->info;
+                return;
+            }
+        }
     }
 }
