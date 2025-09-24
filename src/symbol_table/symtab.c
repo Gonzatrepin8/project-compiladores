@@ -52,7 +52,7 @@ void symtab_print(SymTab *st, FILE *stream) {
     fprintf(stream, "=== Symbol Table ===\n");
     
     for (int i = n - 1; i >= 0; --i) {
-        int level = (n - 1) - i; // 0 = global
+        int level = (n - 1) - i;
         fprintf(stream, "Scope level %d:\n", level);
         Symbol *s = stack[i]->head;
         if (!s) {

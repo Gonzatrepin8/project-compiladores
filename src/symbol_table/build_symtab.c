@@ -14,15 +14,11 @@ static void build_symtab_list(AST *n, SymTab *st, FILE *stream) {
 
 static void build_block(AST *blockNode, SymTab *parent, FILE *stream) {
     SymTab *target;
-    // Si el scope padre es una función, usamos ese mismo scope para el bloque
-    // actual (el cuerpo de la función) y desactivamos el flag para futuros
-    // bloques anidados.
+    
     if (parent->is_function) {
         target = parent;
         parent->is_function = false;
     } else {
-        // Si no es el bloque principal de una función, es un bloque anidado
-        // o global, por lo que creamos un nuevo scope.
         target = symtab_new();
         target->parent = parent;
         target->level  = parent->level + 1;
@@ -48,7 +44,6 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             break;
 
         case NODE_FUNCTION: {
-            // Comprobar si la función ya existe en el scope actual
             if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
                 fprintf(stderr,
                         "Error: función '%s' ya declarada en este scope.\n",
@@ -58,18 +53,13 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
                 symtab_insert(st, n->info);
             }
 
-            // Crear el scope propio de la función
             SymTab *fnScope = symtab_new();
             fnScope->parent = st;
             fnScope->level  = st->level + 1;
             fnScope->is_function = true;
 
-            // insertar parametros en el mismo scope
-            if (n->left) build_symtab_list(n->left, fnScope, stream);   // param list
+            if (n->left) build_symtab_list(n->left, fnScope, stream);
 
-            // procesar el cuerpo: como fnScope->is_function = true,
-            // build_block NO crea un hijo exrta y las variables locales
-            // queda en fnScope directamente
             if (n->right) build_symtab(n->right, fnScope, stream);
 
             break;

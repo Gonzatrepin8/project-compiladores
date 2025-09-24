@@ -509,13 +509,6 @@ int main(int argc, char **argv) {
                 fclose(f);
             }
         }
-
-        
-        // if (result == 0) {
-        //     printf("Create symbol table success.\n");
-        // } else {
-        //     printf("Failed to create symbol table due to parsing errors.\n");
-        // }
         
     }
 
