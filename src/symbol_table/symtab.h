@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include "../ast/ast.h"
+#include <stdbool.h>
 
 typedef enum {
     FUNCTION,

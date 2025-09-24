@@ -9,6 +9,8 @@ AST_SRC = $(SRCDIR)/ast/ast.c
 SYMTAB_SRC = $(SRCDIR)/symbol_table/symtab.c
 BUILDSYMTAB_SRC = $(SRCDIR)/symbol_table/build_symtab.c
 UTILS_SRC = $(SRCDIR)/utils/utils.c
+TYPECHECK_SRC = $(SRCDIR)/type_check/type_check.c
+MAIN_SRC = $(SRCDIR)/main.c
 
 LEX_OBJ = $(SRCDIR)/lex.yy.c
 YACC_OBJ = $(SRCDIR)/parser.tab.c
@@ -18,6 +20,8 @@ SYMTAB_OBJ = $(SRCDIR)/symbol_table/symtab.o
 BUILDSYMTAB_OBJ = $(SRCDIR)/symbol_table/build_symtab.o
 UTILS_OBJ = $(SRCDIR)/utils/utils.o
 
+TYPECHECK_OBJ = $(SRCDIR)/type_check/type_check.o
+MAIN_OBJ = $(SRCDIR)/main.o
 EXEC = c-tds
 
 all: $(EXEC)
@@ -40,13 +44,18 @@ $(BUILDSYMTAB_OBJ): $(BUILDSYMTAB_SRC)
 $(UTILS_OBJ): $(UTILS_SRC)
 	$(CC) -c $(UTILS_SRC) $(CFLAGS) -o $@
 
-$(EXEC): $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(UTILS_OBJ)
-	$(CC) $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(UTILS_OBJ) $(CFLAGS) -o $@
+$(TYPECHECK_OBJ): $(TYPECHECK_SRC)
+	$(CC) -c $(TYPECHECK_SRC) $(CFLAGS) -o $@
+
+$(MAIN_OBJ): $(MAIN_SRC)
+	$(CC) -c $(MAIN_SRC) $(CFLAGS) -o $@
+
+$(EXEC): $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(TYPECHECK_OBJ) $(MAIN_OBJ)
+	$(CC) $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(TYPECHECK_OBJ) $(UTILS_OBJ) $(MAIN_OBJ) $(CFLAGS) -o $@
 
 .PHONY: clean
 clean:
-	rm -f $(LEX_OBJ) $(YACC_OBJ) $(YACC_H) $(AST_OBJ) \
-	      $(BUILDSYMTAB_OBJ) $(SYMTAB_OBJ) $(UTILS_OBJ) $(EXEC)   # <--- limpia utils.o
+	rm -f $(LEX_OBJ) $(YACC_OBJ) $(YACC_H) $(AST_OBJ) $(BUILDSYMTAB_OBJ) $(SYMTAB_OBJ) $(UTILS_OBJ) $(TYPECHECK_OBJ) $(MAIN_OBJ) $(EXEC)
 
 .PHONY: test
 test: $(EXEC)
