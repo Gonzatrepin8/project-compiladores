@@ -457,10 +457,16 @@ int main(int argc, char **argv) {
 
         if (target_stage == TARGET_FULL && result == 0) {
             if (root) {
-                print_ast(root, 0, 1);                // print AST to semout
+                print_ast(root, 0, 1);
                 SymTab *global = symtab_new();
-                build_symtab(root, global, symout);
-                symtab_print(global, symout);
+                TypeInfo res = build_symtab(root, global, symout);
+                if (semantic_error) {
+                    fprintf(stderr, "Falló la creación de la tabla de símbolos debido a un error semantico.\n");
+                    return 1;
+                } else {
+                    symtab_print(global, symout);
+                }
+                
             }
         }
     }
