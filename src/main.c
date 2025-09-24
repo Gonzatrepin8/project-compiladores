@@ -127,15 +127,16 @@ int main(int argc, char **argv) {
 
         if (target_stage == TARGET_FULL && result == 0) {
             if (root) {
-                print_ast(root, 0, 1);
                 SymTab *global = symtab_new();
                 TypeInfo res = build_symtab(root, global, symout);
+                //print_ast(root, 0, 1);
                 if (semantic_error) {
                     fprintf(stderr, "Falló la creación de la tabla de símbolos debido a un error semantico.\n");
                     return 1;
                 } else {
                     symtab_print(global, symout);
-                    check_types(root, global);
+                    check_types(root);
+                    print_ast(root, 0, 1);
                     if (type_check_error) {
                         fprintf(stderr, "Type check error.\n");
                         return 1;

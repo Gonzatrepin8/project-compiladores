@@ -255,9 +255,11 @@ arg_list
         $$ = $1;
     }
     | arg_list ',' expr {
-        $1->next = $3;
-        $$ = $1;
-    }
+      AST *tmp = $1;
+      while (tmp->next) tmp = tmp->next;
+      tmp->next = $3;
+      $$ = $1;
+  }
     ;
 
 return_body
