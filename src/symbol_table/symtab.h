@@ -2,6 +2,7 @@
 #define SYMTAB_H
 
 #include "../ast/ast.h"
+#include <stdbool.h>
 
 typedef enum {
     FUNCTION,
