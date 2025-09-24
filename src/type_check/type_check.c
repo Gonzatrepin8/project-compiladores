@@ -11,8 +11,6 @@ TypeInfo check_types(AST* n, SymTab *st) {
 
     TypeInfo result = TYPE_UNKNOWN;
 
-    printf("CHECK TYPE: %d\n", n->type);
-
     switch (n->type) {
         case NODE_PROG:
                 if (n->left) check_types(n->left, st);
@@ -50,31 +48,36 @@ TypeInfo check_types(AST* n, SymTab *st) {
             TypeInfo lt = check_types(n->left, st);
             TypeInfo rt = check_types(n->right, st);
             if (strcmp(n->info->op, "+") == 0
-                    || strcmp(n->info->op, "-") == 0
-                    || strcmp(n->info->op, "*") == 0
-                    || strcmp(n->info->op, ">") == 0
-                    || strcmp(n->info->op, "<") == 0
-                    ) {
+                || strcmp(n->info->op, "-") == 0
+                || strcmp(n->info->op, "*") == 0
+                || strcmp(n->info->op, "/") == 0
+                || strcmp(n->info->op, "%") == 0
+                ) {
                 if (lt!=TYPE_INT || rt!=TYPE_INT) {
                     fprintf(stderr,"Type error: arithmetic needs int\n");
                     type_check_error = true;
                 }
                 n->info->eval_type = TYPE_INT;
                 result = TYPE_INT;
-            } else if (strcmp(n->info->op, "/") == 0) { // controlar division por 0
+            } else if (strcmp(n->info->op, "<") == 0
+                       || strcmp(n->info->op, ">") == 0) {
                     if ((lt!=TYPE_INT || rt!=TYPE_INT)) {
                         fprintf(stderr,"Type error: arithmetic needs int\n");
                         type_check_error = true;
+                    } else {
+                        n->info->eval_type = TYPE_BOOL;
+                        result = TYPE_BOOL;
                     }
-                } else {
-                    if (lt!=TYPE_BOOL || rt!=TYPE_BOOL) {
-                        fprintf(stderr,"Type error: logical needs bool\n");
+                } else if (strcmp(n->info->op, "==") == 0) {
+                    if (lt != rt) {
+                        fprintf(stderr,"Type error: == needs same type\n");
                         type_check_error = true;
                     }
                     n->info->eval_type = TYPE_BOOL;
                     result = TYPE_BOOL;
                 }
-                break;
+            return result;
+            break;
         }
 
         case NODE_UNOP: {
@@ -94,6 +97,7 @@ TypeInfo check_types(AST* n, SymTab *st) {
                 n->info->eval_type = strcmp(n->info->op, "-") ? TYPE_INT : et;
                 result = TYPE_INT;
             }
+            return result;
             break;
         }
 
@@ -104,7 +108,7 @@ TypeInfo check_types(AST* n, SymTab *st) {
                 lhs = symtab_lookup(st, n->left->info->name);
             }
             if (lhs != rhs) {
-                fprintf(stderr,"Type error: assignment mismatch\n");
+                fprintf(stderr,"Type error: assignment mismatch %d %d\n", lhs, rhs);
                 type_check_error = true;
             }
 
@@ -132,9 +136,6 @@ TypeInfo check_types(AST* n, SymTab *st) {
                         printf("%s: Unmatching type.\n", n->info->name);
                         type_check_error = true;
                     }
-                } else {
-                    printf("%s: variable already declared.\n", n->info->name);
-                    type_check_error = true;
                 }
             }
             result = TYPE_UNKNOWN;
@@ -158,6 +159,24 @@ TypeInfo check_types(AST* n, SymTab *st) {
             check_types(n->right, st);
             break;
         }
+
+            case NODE_WHILE: {
+                if (check_types(n->left, st) != TYPE_BOOL) {
+                    printf("condition is not bool.\n");
+                    type_check_error = true;
+                }
+                check_types(n->right, st);
+                break;
+             }
+
+            case NODE_IF: {
+                if (check_types(n->left, st) != TYPE_BOOL) {
+                    printf("condition is not bool.\n");
+                    type_check_error = true;
+                }
+                check_types(n->right, st);
+                break;
+             }
 
 
         default:
