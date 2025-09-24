@@ -6,12 +6,14 @@
 #include "ast/ast.h"
 #include "symbol_table/symtab.h"
 #include "symbol_table/build_symtab.h"
+#include "type_check/type_check.h"
 
 extern int yylex(void);
 extern void yyerror(const char *s);
 
 extern int debug_mode;
 extern bool semantic_error;
+extern bool type_check_error;
 
 extern FILE *yyin;
 extern FILE *lexout;
@@ -133,8 +135,12 @@ int main(int argc, char **argv) {
                     return 1;
                 } else {
                     symtab_print(global, symout);
+                    check_types(root, global);
+                    if (type_check_error) {
+                        fprintf(stderr, "Type check error.\n");
+                        return 1;
+                    }
                 }
-                
             }
         }
     }
