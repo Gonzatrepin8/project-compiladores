@@ -46,9 +46,10 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
         case NODE_FUNCTION: {
             if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
                 fprintf(stderr,
-                        "Error: función '%s' ya declarada en este scope.\n",
+                        "Error: existe una declaracion (variable o función) con el nombre '%s' ya declarada en este scope.\n",
                         n->info->name);
                 semantic_error = true;
+                return TYPE_ERROR;
             } else {
                 symtab_insert(st, n->info);
             }
