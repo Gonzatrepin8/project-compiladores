@@ -1,6 +1,7 @@
 #ifndef SYMTAB_H
 #define SYMTAB_H
 
+#include <stdbool.h>
 #include "../ast/ast.h"
 
 typedef enum {
@@ -29,5 +30,7 @@ void symtab_print(SymTab *st, FILE *stream);
 void symtab_print_scope(SymTab *st);
 int symtab_get_value(SymTab *st, const char *name, int *found);
 void symtab_set_value(SymTab *st, const char *name, int value);
+void symtab_func_params(SymTab *st, AST *node);
+
 
 #endif

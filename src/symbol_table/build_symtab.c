@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include "../ast/ast.h"
 #include "build_symtab.h"
 
 bool semantic_error = false;
@@ -50,6 +49,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
                         n->info->name);
                 semantic_error = true;
             } else {
+                function_params(n);
                 symtab_insert(st, n->info);
             }
 
@@ -59,7 +59,6 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             fnScope->is_function = true;
 
             if (n->left) build_symtab_list(n->left, fnScope, stream);
-
             if (n->right) build_symtab(n->right, fnScope, stream);
 
             break;

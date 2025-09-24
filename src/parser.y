@@ -124,11 +124,13 @@ method_decl
         } else if (strcmp((char*)$1, "bool") == 0) {
             $$->info->eval_type = TYPE_BOOL;
         }
+        $$->info->is_function = 1;
         free($2);
     }
     | VOID ID '(' param_list_opt ')' method_body {
         $$ = make_node(NODE_FUNCTION, $2, 0, 0, NULL, $4, $6);
         $$->info->eval_type = TYPE_VOID;
+        $$->info->is_function = 1;
         free($2);
     }
     ;

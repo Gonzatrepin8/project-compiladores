@@ -30,12 +30,20 @@ typedef enum {
     TYPE_ERROR
 } TypeInfo;
 
+typedef struct Params{
+    char* param_name;
+    TypeInfo param_type;
+    struct Params *next;
+} Params;
+
 typedef struct Info {
     char* name;
     int ival;
     int bval;
     char* op;
     TypeInfo eval_type;
+    int is_function;
+    Params *params;
 } Info;
 
 typedef struct AST {

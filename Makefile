@@ -8,13 +8,16 @@ YACC_SRC = $(SRCDIR)/parser.y
 AST_SRC = $(SRCDIR)/ast/ast.c
 SYMTAB_SRC = $(SRCDIR)/symbol_table/symtab.c
 BUILDSYMTAB_SRC = $(SRCDIR)/symbol_table/build_symtab.c
+UTILS_SRC = $(SRCDIR)/utils/utils.c
 
 LEX_OBJ = $(SRCDIR)/lex.yy.c
 YACC_OBJ = $(SRCDIR)/parser.tab.c
-YACC_H = $(SRCDIR)/parser.tab.h
+YACC_H   = $(SRCDIR)/parser.tab.h
 AST_OBJ = $(SRCDIR)/ast/ast.o
 SYMTAB_OBJ = $(SRCDIR)/symbol_table/symtab.o
 BUILDSYMTAB_OBJ = $(SRCDIR)/symbol_table/build_symtab.o
+UTILS_OBJ = $(SRCDIR)/utils/utils.o
+
 EXEC = c-tds
 
 all: $(EXEC)
@@ -34,12 +37,16 @@ $(SYMTAB_OBJ): $(SYMTAB_SRC)
 $(BUILDSYMTAB_OBJ): $(BUILDSYMTAB_SRC)
 	$(CC) -c $(BUILDSYMTAB_SRC) $(CFLAGS) -o $@
 
-$(EXEC): $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ)
-	$(CC) $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(CFLAGS) -o $@
+$(UTILS_OBJ): $(UTILS_SRC)
+	$(CC) -c $(UTILS_SRC) $(CFLAGS) -o $@
+
+$(EXEC): $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(UTILS_OBJ)
+	$(CC) $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(UTILS_OBJ) $(CFLAGS) -o $@
 
 .PHONY: clean
 clean:
-	rm -f $(LEX_OBJ) $(YACC_OBJ) $(YACC_H) $(AST_OBJ) $(BUILDSYMTAB_OBJ) $(SYMTAB_OBJ) $(EXEC)
+	rm -f $(LEX_OBJ) $(YACC_OBJ) $(YACC_H) $(AST_OBJ) \
+	      $(BUILDSYMTAB_OBJ) $(SYMTAB_OBJ) $(UTILS_OBJ) $(EXEC)   # <--- limpia utils.o
 
 .PHONY: test
 test: $(EXEC)
@@ -84,5 +91,3 @@ test: $(EXEC)
 	fi; \
 	echo "========================================="; \
 	exit $$failed
-
-

@@ -24,8 +24,9 @@ AST *make_node(NodeType type, char *name, int ival, int bval,
     n->info->ival = ival;
     n->info->bval = bval;
     n->info->op = op ? strdup(op) : NULL;
-
+    n->info->is_function = 0;    
     n->info->eval_type = TYPE_UNKNOWN;
+    n->info->params = NULL;
 
     n->left = left;
     n->right = right;

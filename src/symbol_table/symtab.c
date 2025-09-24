@@ -50,19 +50,45 @@ void symtab_print(SymTab *st, FILE *stream) {
     }
 
     fprintf(stream, "=== Symbol Table ===\n");
-    
+
     for (int i = n - 1; i >= 0; --i) {
         int level = (n - 1) - i;
         fprintf(stream, "Scope level %d:\n", level);
+
         Symbol *s = stack[i]->head;
         if (!s) {
             fprintf(stream, "  (empty)\n");
         }
+
         for (; s != NULL; s = s->next) {
-            fprintf(stream, "  Name: %s, Type: %s, value: %d\n",
-                   s->info->name ? s->info->name : "(null)",
-                   type_to_string(s->info->eval_type),
-                   (s->info->eval_type == TYPE_INT) ? s->info->ival : s->info->bval);
+
+            if (s->info->is_function == 1) {
+                /* ----- Imprimir función ----- */
+                fprintf(stream, "  func(%s), Type: %s",
+                        s->info->name ? s->info->name : "(null)",
+                        type_to_string(s->info->eval_type));
+
+                /* parámetros */
+                if (s->info->params) {
+                    fprintf(stream, ", params: ");
+                    for (Params *p = s->info->params; p; p = p->next) {
+                        fprintf(stream, "%s:%s",
+                                p->param_name ? p->param_name : "(null)",
+                                type_to_string(p->param_type));
+                        if (p->next) fprintf(stream, ", ");
+                    }
+                }
+                fprintf(stream, "\n");
+
+            } else {
+                /* ----- Imprimir variable ----- */
+                fprintf(stream, "  var(%s), Type: %s, value: %d\n",
+                        s->info->name ? s->info->name : "(null)",
+                        type_to_string(s->info->eval_type),
+                        (s->info->eval_type == TYPE_INT)
+                            ? s->info->ival
+                            : s->info->bval);
+            }
         }
     }
     fprintf(stream, "====================\n");

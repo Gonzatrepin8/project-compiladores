@@ -3,6 +3,7 @@
 
 #include "../ast/ast.h"
 #include "symtab.h"
+#include "../utils/utils.h"
 #include <stdio.h>
 #include <stdbool.h>
 
