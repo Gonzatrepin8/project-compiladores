@@ -108,6 +108,10 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
         case NODE_ID:
             symtab_label_nodes(st, n->info->name, n);
             break;
+        
+        case NODE_CALL:
+            symtab_label_nodes(st, n->info->name, n);
+            break;
 
         default:
             if (n->left)  build_symtab(n->left, st, stream);
