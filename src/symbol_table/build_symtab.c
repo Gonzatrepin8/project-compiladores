@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdbool.h>
-#include "../ast.h"
+#include "../ast/ast.h"
 #include "build_symtab.h"
 
 bool semantic_error = false;

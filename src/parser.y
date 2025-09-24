@@ -7,7 +7,7 @@
 #include "parser.tab.h"
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "ast.h"
+#include "ast/ast.h"
 #include "symbol_table/symtab.h"
 #include "symbol_table/build_symtab.h"
 

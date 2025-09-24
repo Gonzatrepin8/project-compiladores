@@ -1,7 +1,7 @@
 #ifndef BUILDSYMTAB_H
 #define BUILDSYMTAB_H
 
-#include "../ast.h"
+#include "../ast/ast.h"
 #include "symtab.h"
 #include <stdio.h>
 #include <stdbool.h>

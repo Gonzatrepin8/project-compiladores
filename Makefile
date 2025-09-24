@@ -5,14 +5,14 @@ TESTDIR = tests
 
 LEX_SRC = $(SRCDIR)/flex.l
 YACC_SRC = $(SRCDIR)/parser.y
-AST_SRC = $(SRCDIR)/ast.c
+AST_SRC = $(SRCDIR)/ast/ast.c
 SYMTAB_SRC = $(SRCDIR)/symbol_table/symtab.c
 BUILDSYMTAB_SRC = $(SRCDIR)/symbol_table/build_symtab.c
 
 LEX_OBJ = $(SRCDIR)/lex.yy.c
 YACC_OBJ = $(SRCDIR)/parser.tab.c
 YACC_H = $(SRCDIR)/parser.tab.h
-AST_OBJ = $(SRCDIR)/ast.o
+AST_OBJ = $(SRCDIR)/ast/ast.o
 SYMTAB_OBJ = $(SRCDIR)/symbol_table/symtab.o
 BUILDSYMTAB_OBJ = $(SRCDIR)/symbol_table/build_symtab.o
 EXEC = c-tds

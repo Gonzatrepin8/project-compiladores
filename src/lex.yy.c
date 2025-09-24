@@ -528,7 +528,7 @@ char *yytext;
 #include <string.h>
 #include <stdio.h>
 #include "parser.tab.h"
-#include "ast.h"
+#include "ast/ast.h"
 
 int debug_mode = 0;
 FILE *lexout;
