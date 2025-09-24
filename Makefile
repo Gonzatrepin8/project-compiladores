@@ -43,12 +43,12 @@ clean:
 
 .PHONY: test
 test: $(EXEC)
-	@echo "========================================="
-	@echo "           RUNNING ALL TESTS"
-	@echo "========================================="
+	@printf "=========================================\n"
+	@printf "           RUNNING ALL TESTS\n"
+	@printf "=========================================\n"
 	@failed=0; \
 	\
-	echo "\n--- Running tests that SHOULD PASS ---"; \
+	printf "\n--- Running tests that SHOULD PASS ---\n"; \
 	for testfile in $(TESTDIR)/pasan/*; do \
 		if [ -f $$testfile ]; then \
 			printf "Testing $$testfile... "; \
@@ -62,7 +62,7 @@ test: $(EXEC)
 		fi; \
 	done; \
 	\
-	echo "\n--- Running tests that SHOULD FAIL ---"; \
+	printf "\n--- Running tests that SHOULD FAIL ---\n"; \
 	for testfile in $(TESTDIR)/noPasan/*; do \
 		if [ -f $$testfile ]; then \
 			printf "Testing $$testfile... "; \
@@ -76,13 +76,13 @@ test: $(EXEC)
 		fi; \
 	done; \
 	\
-	echo "\n========================================="; \
+	printf "\n=========================================\n"; \
 	if [ "$$failed" -eq 0 ]; then \
-		echo "         \033[0;32mALL TESTS PASSED!\033[0m"; \
+		printf "         \033[0;32mALL TESTS PASSED!\033[0m\n"; \
 	else \
-		echo "       \033[0;31mSOME TESTS FAILED\033[0m"; \
+		printf "       \033[0;31mSOME TESTS FAILED\033[0m\n"; \
 	fi; \
-	echo "========================================="; \
+	printf "=========================================\n"; \
 	exit $$failed
 
 
