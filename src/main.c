@@ -129,7 +129,6 @@ int main(int argc, char **argv) {
             if (root) {
                 SymTab *global = symtab_new();
                 TypeInfo res = build_symtab(root, global, symout);
-                //print_ast(root, 0, 1);
                 if (semantic_error) {
                     fprintf(stderr, "Falló la creación de la tabla de símbolos debido a un error semantico.\n");
                     return 1;

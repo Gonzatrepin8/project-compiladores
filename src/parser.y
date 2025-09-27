@@ -259,7 +259,7 @@ arg_list
       while (tmp->next) tmp = tmp->next;
       tmp->next = $3;
       $$ = $1;
-  }
+    }
     ;
 
 return_body
@@ -331,9 +331,11 @@ expr
 literal
     : INT_LIT {
         $$ = make_node(NODE_INT, NULL, $1, 0, NULL, NULL, NULL);
+        $$->info->eval_type = TYPE_INT;
     }
     | BOOL_LIT {
         $$ = make_node(NODE_BOOL, NULL, 0, $1, NULL, NULL, NULL);
+        $$->info->eval_type = TYPE_BOOL;
     }
     ;
 %%

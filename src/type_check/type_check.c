@@ -152,10 +152,11 @@ void check_types(AST* n) {
             if (n->left)  check_types(n->left);
             if (n->right) check_types(n->right);
 
-            AST  *actual_params = n->right;
+            AST  *actual_params = n->left;
             Params *formal_params = n->info->params;
 
             while (formal_params != NULL && actual_params != NULL) {
+                //print_info(actual_params->info);
                 if (formal_params->param_type != actual_params->info->eval_type) {
                     fprintf(stderr,
                             "Type error in call to %s: expected type %d but got type %d.\n",

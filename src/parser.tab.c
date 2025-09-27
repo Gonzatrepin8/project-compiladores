@@ -554,7 +554,7 @@ static const yytype_int16 yyrline[] =
      179,   185,   188,   203,   207,   210,   214,   217,   220,   223,
      229,   232,   238,   245,   248,   254,   257,   266,   269,   275,
      276,   280,   284,   287,   290,   293,   296,   299,   302,   305,
-     308,   311,   314,   317,   320,   323,   326,   332,   335
+     308,   311,   314,   317,   320,   323,   326,   332,   336
 };
 #endif
 
@@ -1553,7 +1553,7 @@ yyreduce:
       while (tmp->next) tmp = tmp->next;
       tmp->next = (yyvsp[0].ast);
       (yyval.ast) = (yyvsp[-2].ast);
-  }
+    }
 #line 1558 "src/parser.tab.c"
     break;
 
@@ -1718,20 +1718,22 @@ yyreduce:
 #line 332 "src/parser.y"
               {
         (yyval.ast) = make_node(NODE_INT, NULL, (yyvsp[0].ival), 0, NULL, NULL, NULL);
+        (yyval.ast)->info->eval_type = TYPE_INT;
     }
-#line 1723 "src/parser.tab.c"
+#line 1724 "src/parser.tab.c"
     break;
 
   case 58: /* literal: BOOL_LIT  */
-#line 335 "src/parser.y"
+#line 336 "src/parser.y"
                {
         (yyval.ast) = make_node(NODE_BOOL, NULL, 0, (yyvsp[0].bval), NULL, NULL, NULL);
+        (yyval.ast)->info->eval_type = TYPE_BOOL;
     }
-#line 1731 "src/parser.tab.c"
+#line 1733 "src/parser.tab.c"
     break;
 
 
-#line 1735 "src/parser.tab.c"
+#line 1737 "src/parser.tab.c"
 
       default: break;
     }
@@ -1924,7 +1926,7 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 339 "src/parser.y"
+#line 341 "src/parser.y"
 
 
 void yyerror(const char *s) {
