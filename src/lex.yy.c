@@ -1,6 +1,6 @@
-#line 2 "src/lex.yy.c"
+#line 1 "src/lex.yy.c"
 
-#line 4 "src/lex.yy.c"
+#line 3 "src/lex.yy.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -532,8 +532,8 @@ char *yytext;
 
 int debug_mode = 0;
 FILE *lexout;
+#line 535 "src/lex.yy.c"
 #line 536 "src/lex.yy.c"
-#line 537 "src/lex.yy.c"
 
 #define INITIAL 0
 
@@ -753,7 +753,7 @@ YY_DECL
 #line 19 "src/flex.l"
 
 
-#line 757 "src/lex.yy.c"
+#line 756 "src/lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -960,7 +960,7 @@ YY_RULE_SETUP
 #line 71 "src/flex.l"
 ECHO;
 	YY_BREAK
-#line 964 "src/lex.yy.c"
+#line 963 "src/lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
