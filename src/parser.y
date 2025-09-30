@@ -5,6 +5,8 @@
 int yylex(void);
 void yyerror(const char *s);
 
+extern int yylineno;
+
 AST *root = NULL;
 %}
 
@@ -255,8 +257,10 @@ arg_list
         $$ = $1;
     }
     | arg_list ',' expr {
-        $1->next = $3;
-        $$ = $1;
+      AST *tmp = $1;
+      while (tmp->next) tmp = tmp->next;
+      tmp->next = $3;
+      $$ = $1;
     }
     ;
 
@@ -329,13 +333,15 @@ expr
 literal
     : INT_LIT {
         $$ = make_node(NODE_INT, NULL, $1, 0, NULL, NULL, NULL);
+        $$->info->eval_type = TYPE_INT;
     }
     | BOOL_LIT {
         $$ = make_node(NODE_BOOL, NULL, 0, $1, NULL, NULL, NULL);
+        $$->info->eval_type = TYPE_BOOL;
     }
     ;
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s\n", s);
+    fprintf(stderr, "Syntax error at line %d: %s\n", yylineno, s);
 }

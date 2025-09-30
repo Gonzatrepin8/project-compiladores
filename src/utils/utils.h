@@ -6,5 +6,5 @@
 #include "../symbol_table/symtab.h"
 
 void function_params(AST *node);
-
+void print_info(const Info *info);
 #endif
