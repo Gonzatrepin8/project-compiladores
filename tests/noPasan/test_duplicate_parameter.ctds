@@ -1,0 +1,5 @@
+program {
+    integer mi_funcion(integer a, integer a) { // Error: el parámetro 'a' está duplicado
+        return a;
+    }
+}

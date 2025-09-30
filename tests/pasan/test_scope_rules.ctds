@@ -1,0 +1,25 @@
+/*
+ * Prueba el anidamiento de scopes, el ocultamiento de variables
+ * y el acceso a variables de scopes exteriores.
+ * Este programa es semánticamente válido.
+ */
+program {
+    integer global_x = 10;
+
+    void main() {
+        integer x = 20; // Oculta a global_x
+        integer y = 30;
+
+        {
+            // Nuevo scope, puede ver 'x' y 'y' de main, y 'global_x'
+            bool x = true; // Oculta a 'x' de main
+            
+            // Asigna a la 'y' del scope de main
+            y = 40; 
+        }
+
+        // Fuera del bloque, 'x' vuelve a ser la variable integer de main.
+        // La 'x' booleana ya no existe.
+        x = global_x; // Accede a la variable global
+    }
+}
