@@ -5,6 +5,8 @@
 int yylex(void);
 void yyerror(const char *s);
 
+extern int yylineno;
+
 AST *root = NULL;
 %}
 
@@ -341,5 +343,5 @@ literal
 %%
 
 void yyerror(const char *s) {
-    fprintf(stderr, "Error: %s\n", s);
+    fprintf(stderr, "Syntax error at line %d: %s\n", yylineno, s);
 }
