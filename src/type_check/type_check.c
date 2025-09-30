@@ -23,7 +23,9 @@ void check_types(AST* n) {
             TypeInfo right_expr_type = n->right->info->eval_type;
             
             if(left_expr_type != right_expr_type){
-                fprintf(stderr,"Type error: types do not match\n");
+                fprintf(stderr,"Type error: types %s and %s do not match\n",
+                        type_to_string(left_expr_type),
+                        type_to_string(right_expr_type));
                 type_check_error = true;
             }
             
@@ -76,6 +78,7 @@ void check_types(AST* n) {
 
         case NODE_ASSIGN: {
             if (n->right) check_types(n->right);
+            if (n->next) check_types(n->next);
             
             TypeInfo id_type = n->left->info->eval_type;
             TypeInfo expr_type = n->right->info->eval_type;
@@ -151,6 +154,7 @@ void check_types(AST* n) {
         case NODE_CALL: {
             if (n->left)  check_types(n->left);
             if (n->right) check_types(n->right);
+            if (n->next) check_types(n->next);
 
             AST  *actual_params = n->left;
             Params *formal_params = n->info->params;
@@ -159,10 +163,10 @@ void check_types(AST* n) {
                 //print_info(actual_params->info);
                 if (formal_params->param_type != actual_params->info->eval_type) {
                     fprintf(stderr,
-                            "Type error in call to %s: expected type %d but got type %d.\n",
+                            "Type error in call to %s: expected type %s but got type %s.\n",
                             n->info->name,
-                            formal_params->param_type,
-                            actual_params->info->eval_type);
+                            type_to_string(formal_params->param_type),
+                            type_to_string(actual_params->info->eval_type));
                     type_check_error = true;
                 }
                 formal_params = formal_params->next;

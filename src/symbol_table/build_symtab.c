@@ -103,6 +103,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             }
             if (n->left)  build_symtab(n->left, st, stream);
             if (n->right) build_symtab(n->right, st, stream);
+            if (n->next) build_symtab(n->next, st, stream);
             break;
         
         case NODE_ID:
@@ -113,11 +114,13 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             symtab_label_nodes(st, n->info->name, n);
             if (n->left)  build_symtab(n->left, st, stream);
             if (n->right) build_symtab(n->right, st, stream);
+            if (n->next) build_symtab(n->next, st, stream);
             break;
 
         default:
             if (n->left)  build_symtab(n->left, st, stream);
             if (n->right) build_symtab(n->right, st, stream);
+            if (n->next) build_symtab(n->next, st, stream);
             break;
     }
 
