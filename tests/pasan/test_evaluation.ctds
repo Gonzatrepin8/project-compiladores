@@ -1,0 +1,21 @@
+program
+    {
+    integer sum(integer a, integer b, integer c, integer d) {
+        return ((a + b) * c) / d;
+    }
+
+    bool equals(bool a, bool b) {
+        return a == b;
+    }
+
+    integer main() {
+        integer x = 5;
+        integer y = 2;
+        integer sum_result = sum(x * 1, y + 2, x * x, y + x);
+        bool a = true;
+        bool b = false;
+        bool is_equal = equals(a == false, !true || b);
+        bool is_equal2 = equals(a, b);
+        integer sum_sums = sum(x, y, x / y, 1 + y) + sum(10 + 50 + 10, 20 * 2, 50 / 2, 10 % 2);
+    }
+}
