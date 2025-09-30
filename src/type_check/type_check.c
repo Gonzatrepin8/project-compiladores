@@ -27,14 +27,14 @@ void check_types(AST* n) {
                 type_check_error = true;
             }
             
-            if(strcmp(n->info->op, "==") == 0){
+            if (strcmp(n->info->op, "==") == 0
+             || strcmp(n->info->op, ">") == 0
+             || strcmp(n->info->op, "<") == 0
+             ) {
                 n->info->eval_type = TYPE_BOOL;
-            }
-            else if (strcmp(n->info->op, "+") == 0
+            } else if (strcmp(n->info->op, "+") == 0
                     || strcmp(n->info->op, "-") == 0
                     || strcmp(n->info->op, "*") == 0
-                    || strcmp(n->info->op, ">") == 0
-                    || strcmp(n->info->op, "<") == 0
                     || strcmp(n->info->op, "/") == 0
                     || strcmp(n->info->op, "%") == 0
                     ) { 
