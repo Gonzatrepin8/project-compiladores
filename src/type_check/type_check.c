@@ -82,7 +82,7 @@ void check_types(AST* n) {
             
             TypeInfo id_type = n->left->info->eval_type;
             TypeInfo expr_type = n->right->info->eval_type;
-            
+
             if (id_type != expr_type) {
                 fprintf(stderr,"Type error: assignment mismatch\n");
                 type_check_error = true;
@@ -153,14 +153,17 @@ void check_types(AST* n) {
 
         case NODE_CALL: {
             if (n->left)  check_types(n->left);
-            if (n->right) check_types(n->right);
+            AST *arg = n->left;
+            while (arg) {
+                check_types(arg);
+                arg = arg->next;
+            }
             if (n->next) check_types(n->next);
 
             AST  *actual_params = n->left;
             Params *formal_params = n->info->params;
 
             while (formal_params != NULL && actual_params != NULL) {
-                //print_info(actual_params->info);
                 if (formal_params->param_type != actual_params->info->eval_type) {
                     fprintf(stderr,
                             "Type error in call to %s: expected type %s but got type %s.\n",
