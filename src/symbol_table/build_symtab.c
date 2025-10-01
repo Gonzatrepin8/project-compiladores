@@ -44,7 +44,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
         case NODE_FUNCTION: {
             if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
                 fprintf(stderr,
-                        "Error: existe una declaracion (variable o función) con el nombre '%s' ya declarada en este scope.\n",
+                        "Error: A declaration (variable or function) with the name '%s' already exists in this scope.\n",
                         n->info->name);
                 semantic_error = true;
                 return TYPE_ERROR;
@@ -76,7 +76,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
 
         case NODE_PARAM:
             if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
-                fprintf(stderr, "Error: parámetro '%s' ya declarado.\n", n->info->name);
+                fprintf(stderr, "Error: Parameter '%s' already declared.\n", n->info->name);
                 semantic_error = true;
             } else {
                 symtab_insert(st, n->info);
@@ -90,7 +90,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             }
 
             if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
-                fprintf(stderr, "Error: variable '%s' ya declarada.\n", n->info->name);
+                fprintf(stderr, "Error: Variable '%s' already declared.\n", n->info->name);
                 semantic_error = true;
             } else {
                 symtab_insert(st, n->info);
@@ -109,7 +109,7 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
         
         case NODE_ID:
             if (symtab_lookup(st, n->info->name) == TYPE_ERROR) {
-                fprintf(stderr, "Error: la variable '%s' no ha sido declarada.\n", n->info->name);
+                fprintf(stderr, "Error: Variable '%s' has not been declared.\n", n->info->name);
                 semantic_error = true;
             } else {
                 symtab_label_nodes(st, n->info->name, n);
