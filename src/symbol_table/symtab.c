@@ -149,3 +149,14 @@ void symtab_label_nodes(SymTab *st, const char *name, AST *node){
         }
     }
 }
+
+Info *symtab_lookup_info(SymTab *st, const char *name) {
+    for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
+        for (Symbol *s = scope->head; s != NULL; s = s->next) {
+            if (strcmp(s->info->name, name) == 0) {
+                return s->info;
+            }
+        }
+    }
+    return NULL;
+}
