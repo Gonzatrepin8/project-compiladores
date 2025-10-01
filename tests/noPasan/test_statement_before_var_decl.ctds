@@ -1,0 +1,7 @@
+program {
+    void f() { }
+    void main() {
+        f();
+        integer x = 1;
+    }
+}

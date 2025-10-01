@@ -1,0 +1,6 @@
+program {
+    integer x() {
+        return 1;
+    }
+    integer a = x();
+}
