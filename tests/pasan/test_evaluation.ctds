@@ -1,21 +1,34 @@
 program
-    {
-    integer sum(integer a, integer b, integer c, integer d) {
-        return ((a + b) * c) / d;
+{
+    integer calculateExpression(integer num1, integer num2, integer multiplier, integer divisor) {
+        return ((num1 + num2) * multiplier) / divisor;
     }
 
-    bool equals(bool a, bool b) {
-        return a == b;
+    bool evaluateLogic(bool condition1, bool condition2, bool condition3, bool expectedResult) {
+        return ((condition1 || condition2) && condition3) == expectedResult;
+    }
+
+    bool areBooleansEqual(bool first, bool second) {
+        return first == second;
     }
 
     integer main() {
-        integer x = 5;
-        integer y = 2;
-        integer sum_result = sum(x * 1, y + 2, x * x, y + x);
-        bool a = true;
-        bool b = false;
-        bool is_equal = equals(a == false, !true || b);
-        bool is_equal2 = equals(a, b);
-        integer sum_sums = sum(x, y, x / y, 1 + y) + sum(10 + 50 + 10, 20 * 2, 50 / 2, 10 % 2);
+        integer valueA = 5;
+        integer valueB = 2;
+
+        integer result1 = calculateExpression(valueA * 1, valueB + 2, valueA * valueA, valueB + valueA);
+
+        bool flagTrue = true;
+        bool flagFalse = false;
+
+        bool comparison1 = areBooleansEqual(flagTrue == false, !true || flagFalse);
+        bool comparison2 = areBooleansEqual(flagTrue, flagFalse);
+
+        bool logicTestResult = evaluateLogic(flagTrue, flagFalse || true, flagTrue, flagFalse || false) || 
+                               evaluateLogic(true || false, !false && true, true && true, true && true && true);
+
+        integer combinedSum = calculateExpression(valueA + 1, valueB + 2, valueA, valueB * 2) + 
+                              calculateExpression(10 + 50 + 10, 20 * 2, 50 / 2, 10 % 2);
     }
 }
+
