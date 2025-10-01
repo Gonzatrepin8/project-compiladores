@@ -28,6 +28,13 @@ void check_types(AST* n) {
                 if (n->right) check_types(n->right);
             break;
 
+        case NODE_ID:
+            if (n->info && n->info->is_function) {
+                n->info->eval_type = TYPE_ERROR;
+                type_check_error = true;
+            }
+            break;
+
         case NODE_BINOP: {
             if (n->left) check_types(n->left);
             if (n->right) check_types(n->right);
