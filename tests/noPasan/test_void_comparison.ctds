@@ -1,0 +1,8 @@
+program {
+    void f() {
+    }
+
+    bool main() {
+        return f() > f();
+    }
+}
