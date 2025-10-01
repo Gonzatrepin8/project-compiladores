@@ -38,44 +38,76 @@ void check_types(AST* n) {
         case NODE_BINOP: {
             if (n->left) check_types(n->left);
             if (n->right) check_types(n->right);
-            TypeInfo left_expr_type = n->left->info->eval_type;
+
+            TypeInfo left_expr_type  = n->left->info->eval_type;
             TypeInfo right_expr_type = n->right->info->eval_type;
-            
-            if(left_expr_type != right_expr_type){
-                fprintf(stderr,"Type error: types %s and %s do not match\n",
-                        type_to_string(left_expr_type),
-                        type_to_string(right_expr_type));
+
+            if (left_expr_type == TYPE_VOID || right_expr_type == TYPE_VOID) {
+                fprintf(stderr,
+                        "Type error: cannot use void value in an expression\n");
                 type_check_error = true;
+                n->info->eval_type = TYPE_ERROR;
+                break;
             }
-            
-            if (strcmp(n->info->op, "==") == 0
-             || strcmp(n->info->op, ">") == 0
-             || strcmp(n->info->op, "<") == 0
-             ) {
-                n->info->eval_type = TYPE_BOOL;
-            } else if (strcmp(n->info->op, "+") == 0
-                    || strcmp(n->info->op, "-") == 0
-                    || strcmp(n->info->op, "*") == 0
-                    || strcmp(n->info->op, "/") == 0
-                    || strcmp(n->info->op, "%") == 0
-                    ) { 
-                
-                if (left_expr_type != TYPE_INT) {
-                    fprintf(stderr,"Type error: arithmetic needs int\n");
+
+            if (strcmp(n->info->op, "==") == 0) {
+                if (left_expr_type != right_expr_type) {
+                    fprintf(stderr,
+                            "Type error: '==' requires operands of the same type, got %s and %s\n",
+                            type_to_string(left_expr_type),
+                            type_to_string(right_expr_type));
                     type_check_error = true;
                 }
-                
+                if (left_expr_type != TYPE_INT && left_expr_type != TYPE_BOOL) {
+                    fprintf(stderr,
+                            "Type error: '==' only allowed for int or bool, got %s\n",
+                            type_to_string(left_expr_type));
+                    type_check_error = true;
+                }
+                n->info->eval_type = TYPE_BOOL;
+
+            } else if (strcmp(n->info->op, ">") == 0 ||
+                       strcmp(n->info->op, "<") == 0) {
+                if (left_expr_type != TYPE_INT || right_expr_type != TYPE_INT) {
+                    fprintf(stderr,
+                            "Type error: '%s' requires integer operands, got %s and %s\n",
+                            n->info->op,
+                            type_to_string(left_expr_type),
+                            type_to_string(right_expr_type));
+                    type_check_error = true;
+                }
+                n->info->eval_type = TYPE_BOOL;
+
+            } else if (strcmp(n->info->op, "+") == 0 ||
+                       strcmp(n->info->op, "-") == 0 ||
+                       strcmp(n->info->op, "*") == 0 ||
+                       strcmp(n->info->op, "/") == 0 ||
+                       strcmp(n->info->op, "%") == 0) {
+                if (left_expr_type != TYPE_INT || right_expr_type != TYPE_INT) {
+                    fprintf(stderr,
+                            "Type error: arithmetic operator '%s' requires integers, got %s and %s\n",
+                            n->info->op,
+                            type_to_string(left_expr_type),
+                            type_to_string(right_expr_type));
+                    type_check_error = true;
+                }
                 n->info->eval_type = TYPE_INT;
-    
+
             } else {
-                if (left_expr_type != TYPE_BOOL) {
-                        fprintf(stderr,"Type error: logical needs bool\n");
-                        type_check_error = true;
-                    }
-                    n->info->eval_type = TYPE_BOOL;
+                if (left_expr_type != TYPE_BOOL || right_expr_type != TYPE_BOOL) {
+                    fprintf(stderr,
+                            "Type error: logical operator '%s' requires booleans, got %s and %s\n",
+                            n->info->op,
+                            type_to_string(left_expr_type),
+                            type_to_string(right_expr_type));
+                    type_check_error = true;
+                }
+                n->info->eval_type = TYPE_BOOL;
             }
+
             break;
         }
+
 
         case NODE_UNOP: {
             if (n->left) check_types(n->left);
