@@ -7,6 +7,18 @@
 bool type_check_error = false;
 static TypeInfo func_type = TYPE_ERROR;
 
+static bool has_return(AST *n) {
+    if (!n) return false;
+
+    if (n->type == NODE_RETURN) return true;
+
+    if (n->left && has_return(n->left)) return true;
+    if (n->right && has_return(n->right)) return true;
+    if (n->next && has_return(n->next)) return true;
+
+    return false;
+}
+
 void check_types(AST* n) {
     if (!n) return;
 
@@ -100,16 +112,16 @@ void check_types(AST* n) {
             if (!n->left) {
                 n->info->eval_type = TYPE_VOID;
                 if (func_type != TYPE_VOID) {
-                    fprintf(stderr,"Type error: function expects %d but returns void\n" , func_type);
+                    fprintf(stderr,"Type error: function expects %s but returns void\n" , type_to_string(func_type));
                     type_check_error = true;
                 }
             } else {
                 check_types(n->left);
                 n->info->eval_type = n->left->info->eval_type;
                 if (n->info->eval_type != func_type) {
-                    fprintf(stderr,"Type error: function expects %d but returns %d\n",
-                            func_type,
-                            n->info->eval_type);
+                    fprintf(stderr,"Type error: function expects %s but returns %s\n",
+                            type_to_string(func_type),
+                            type_to_string(n->info->eval_type));
                     type_check_error = true;
                 }
             }
@@ -120,6 +132,22 @@ void check_types(AST* n) {
             func_type = n->info->eval_type;
             if(n->left) check_types(n->left);
             if(n->right) check_types(n->right);
+
+            if (func_type != TYPE_VOID) {
+                bool is_extern = (n->right && n->right->type == NODE_ID &&
+                                  n->right->info && n->right->info->name &&
+                                  strcmp(n->right->info->name, "EXTERN") == 0);
+
+                if (!is_extern && !has_return(n->right)) {
+                    fprintf(stderr,
+                            "Type error: function '%s' declared as %s but has no return statement.\n",
+                            (n->info && n->info->name) ? n->info->name : "(unknown)",
+                            type_to_string(func_type));
+                    type_check_error = true;
+                }
+            }
+
+            func_type = TYPE_ERROR;
             break;
         }
 
@@ -152,7 +180,7 @@ void check_types(AST* n) {
         }
 
         case NODE_CALL: {
-            if (n->left)  check_types(n->left);
+            if (n->left) check_types(n->left);
             if (n->next) check_types(n->next);
 
             AST  *actual_params = n->left;
