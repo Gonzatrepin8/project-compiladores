@@ -6,4 +6,6 @@ program {
     integer g() {
         return f;
     }
+
+    void main() { }
 }
