@@ -153,17 +153,13 @@ void check_types(AST* n) {
 
         case NODE_CALL: {
             if (n->left)  check_types(n->left);
-            AST *arg = n->left;
-            while (arg) {
-                check_types(arg);
-                arg = arg->next;
-            }
             if (n->next) check_types(n->next);
 
             AST  *actual_params = n->left;
             Params *formal_params = n->info->params;
 
             while (formal_params != NULL && actual_params != NULL) {
+                check_types(actual_params);
                 if (formal_params->param_type != actual_params->info->eval_type) {
                     fprintf(stderr,
                             "Type error in call to %s: expected type %s but got type %s.\n",
