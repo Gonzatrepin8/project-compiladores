@@ -204,6 +204,14 @@ void check_types(AST* n) {
         }
 
         case NODE_CALL: {
+            if (!n->info || !n->info->is_function) {
+                fprintf(stderr,
+                        "Type error: '%s' is not a function.\n",
+                        (n->info && n->info->name) ? n->info->name : "(unknown)");
+                type_check_error = true;
+                n->info->eval_type = TYPE_ERROR;
+                break;
+            }
             if (n->left) check_types(n->left);
             if (n->next) check_types(n->next);
 
