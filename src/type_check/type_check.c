@@ -96,20 +96,32 @@ void check_types(AST* n) {
         }
 
         case NODE_ASSIGN: {
+            if (n->left) check_types(n->left);
             if (n->right) check_types(n->right);
             if (n->next) check_types(n->next);
-            
+
+            if (n->left->info && n->left->info->is_function) {
+                fprintf(stderr,
+                        "Type error: cannot assign to function '%s'.\n",
+                        n->left->info->name);
+                type_check_error = true;
+                break;
+            }
+
             TypeInfo id_type = n->left->info->eval_type;
             TypeInfo expr_type = n->right->info->eval_type;
 
             if (id_type != expr_type) {
-                fprintf(stderr,"Type error: assignment mismatch\n");
+                fprintf(stderr,"Type error: assignment mismatch (expected %s but got %s)\n",
+                        type_to_string(id_type),
+                        type_to_string(expr_type));
                 type_check_error = true;
             }
-            
+
             n->info->eval_type = id_type;
             break;
         }
+
 
         case NODE_VAR_DECL:
             check_types(n->right);
