@@ -84,30 +84,36 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
             break;
 
         case NODE_VAR_DECL:
+
+            if (n->right && n->right->right) {
+                build_symtab(n->right->right, st, stream);
+            }
+
             if (symtab_scope(st, n->info->name) != TYPE_ERROR) {
                 fprintf(stderr, "Error: variable '%s' ya declarada.\n", n->info->name);
                 semantic_error = true;
             } else {
                 symtab_insert(st, n->info);
             }
-            if (n->left) build_symtab(n->left, st, stream);
-            if (n->right) build_symtab(n->right, st, stream);
+
+            if (n->right && n->right->left) {
+                 build_symtab(n->right->left, st, stream);
+            }
             break;
 
         case NODE_ASSIGN:
-            if (n->left && n->left->info &&
-                symtab_lookup(st, n->left->info->name) == TYPE_ERROR) {
-                fprintf(stderr, "Error: asignación a variable no declarada '%s'.\n",
-                        n->left->info->name);
-                semantic_error = true;
-            }
-            if (n->left)  build_symtab(n->left, st, stream);
-            if (n->right) build_symtab(n->right, st, stream);
+            if (n->right)  build_symtab(n->right, st, stream);
+            if (n->left) build_symtab(n->left, st, stream);
             if (n->next) build_symtab(n->next, st, stream);
             break;
         
         case NODE_ID:
-            symtab_label_nodes(st, n->info->name, n);
+            if (symtab_lookup(st, n->info->name) == TYPE_ERROR) {
+                fprintf(stderr, "Error: la variable '%s' no ha sido declarada.\n", n->info->name);
+                semantic_error = true;
+            } else {
+                symtab_label_nodes(st, n->info->name, n);
+            }
             break;
         
         case NODE_CALL:
