@@ -1,0 +1,9 @@
+program {
+    integer f() {
+        return 0;
+    }
+
+    integer g() {
+        return f;
+    }
+}
