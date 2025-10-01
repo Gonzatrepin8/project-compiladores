@@ -40,6 +40,15 @@ void check_types(AST* n) {
             if (n->right) check_types(n->right);
             TypeInfo left_expr_type = n->left->info->eval_type;
             TypeInfo right_expr_type = n->right->info->eval_type;
+
+            if (left_expr_type == TYPE_VOID || right_expr_type == TYPE_VOID) {
+                fprintf(stderr,
+                        "Type error: cannot use void function in expression\n");
+                type_check_error = true;
+                n->info->eval_type = TYPE_ERROR;
+                break;
+            }
+
             
             if(left_expr_type != right_expr_type){
                 fprintf(stderr,"Type error: types %s and %s do not match\n",
