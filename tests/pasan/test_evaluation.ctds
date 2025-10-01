@@ -12,7 +12,7 @@ program
         return first == second;
     }
 
-    integer main() {
+    void main() {
         integer valueA = 5;
         integer valueB = 2;
 
