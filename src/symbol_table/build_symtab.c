@@ -126,6 +126,9 @@ TypeInfo build_symtab(AST *n, SymTab *st, FILE *stream) {
 
             if (n->next) build_symtab(n->next, st, stream);
             break;
+        
+        case NODE_EXTERN:
+            break;
 
         default:
             if (n->left)  build_symtab(n->left, st, stream);

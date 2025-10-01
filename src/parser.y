@@ -131,7 +131,7 @@ method_body
         $$ = $1;
     }
     | EXTERN ';' {
-        $$ = make_node(NODE_ID, "EXTERN", 0, 0, NULL, NULL, NULL);
+        $$ = make_node(NODE_EXTERN, NULL, 0, 0, NULL, NULL, NULL);
     }
     ;
 

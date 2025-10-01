@@ -20,6 +20,7 @@ typedef enum {
     NODE_PROG,
     NODE_CALL,
     NODE_PARAM,
+    NODE_EXTERN,
 } NodeType;
 
 typedef enum {

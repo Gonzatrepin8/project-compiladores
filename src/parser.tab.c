@@ -1343,7 +1343,7 @@ yyreduce:
   case 14: /* method_body: EXTERN ';'  */
 #line 133 "src/parser.y"
                  {
-        (yyval.ast) = make_node(NODE_ID, "EXTERN", 0, 0, NULL, NULL, NULL);
+        (yyval.ast) = make_node(NODE_EXTERN, NULL, 0, 0, NULL, NULL, NULL);
     }
 #line 1349 "src/parser.tab.c"
     break;

@@ -136,6 +136,11 @@ void check_types(AST* n) {
         }
 
         case NODE_FUNCTION: {
+
+            if (n->right && n->right->type == NODE_EXTERN) {
+                break;
+            }
+            
             func_type = n->info->eval_type;
             if(n->left) check_types(n->left);
             if(n->right) check_types(n->right);
