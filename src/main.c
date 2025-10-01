@@ -130,18 +130,18 @@ int main(int argc, char **argv) {
                 SymTab *global = symtab_new();
                 TypeInfo res = build_symtab(root, global, symout);
                 if (semantic_error) {
-                    fprintf(stderr, "Falló la creación de la tabla de símbolos debido a un error semantico.\n");
+                    fprintf(stderr, "Creation of symbol table failed due to a semantic error.\n");
                     return 1;
                 }
                 Info *main_info = symtab_lookup_info(global, "main");
                 if (main_info == NULL) {
-                    fprintf(stderr, "Error semántico: La función 'main' no está definida.\n");
+                    fprintf(stderr, "Semantic error: The function 'main' is not defined.\n");
                     semantic_error = true;
                 } else if (!main_info->is_function) {
-                    fprintf(stderr, "Error semántico: 'main' debe ser una función.\n");
+                    fprintf(stderr, "Semantic error: 'main' must be a function.\n");
                     semantic_error = true;
                 } else if (main_info->params != NULL) {
-                    fprintf(stderr, "Error semántico: La función 'main' no debe tener parámetros.\n");
+                    fprintf(stderr, "Semantic error: The 'main' function must have no parameters.\n");
                     semantic_error = true;
                 }
 
