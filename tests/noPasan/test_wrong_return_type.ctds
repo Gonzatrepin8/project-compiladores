@@ -2,4 +2,6 @@ program {
     integer f() {
         return true;
     }
+
+    void main() { }
 }

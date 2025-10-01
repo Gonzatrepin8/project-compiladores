@@ -3,4 +3,6 @@ program {
         return 1;
     }
     integer a = x();
+
+    void main() { }
 }

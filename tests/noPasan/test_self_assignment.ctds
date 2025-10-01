@@ -1,3 +1,5 @@
 program {
     integer a = a;
+
+    void main() { }
 }
