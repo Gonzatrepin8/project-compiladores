@@ -132,14 +132,29 @@ int main(int argc, char **argv) {
                 if (semantic_error) {
                     fprintf(stderr, "Falló la creación de la tabla de símbolos debido a un error semantico.\n");
                     return 1;
-                } else {
-                    symtab_print(global, symout);
-                    check_types(root);
-                    print_ast(root, 0, 1);
-                    if (type_check_error) {
-                        fprintf(stderr, "Type check error.\n");
-                        return 1;
-                    }
+                }
+                Info *main_info = symtab_lookup_info(global, "main");
+                if (main_info == NULL) {
+                    fprintf(stderr, "Error semántico: La función 'main' no está definida.\n");
+                    semantic_error = true;
+                } else if (!main_info->is_function) {
+                    fprintf(stderr, "Error semántico: 'main' debe ser una función.\n");
+                    semantic_error = true;
+                } else if (main_info->params != NULL) {
+                    fprintf(stderr, "Error semántico: La función 'main' no debe tener parámetros.\n");
+                    semantic_error = true;
+                }
+
+                if (semantic_error) {
+                    return 1;
+                }
+
+                symtab_print(global, symout);
+                check_types(root);
+                print_ast(root, 0, 1);
+                if (type_check_error) {
+                    fprintf(stderr, "Type check error.\n");
+                    return 1;
                 }
             }
         }
