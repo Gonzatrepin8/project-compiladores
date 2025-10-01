@@ -9,9 +9,16 @@ program {
         return;
     }
 
+    void another_do_nothing() {
+    }
+
+    integer pow(integer base, integer exponent) extern;
+
     void main() {
         integer result = 0;
+        integer pow2 = pow(2, 2);
         result = add(5, 3);
         do_nothing();
+        another_do_nothing();
     }
 }
