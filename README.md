@@ -23,6 +23,9 @@ To run the parser tests simply use:
 make test
 ```
 
-### First Release
+### Submissions
 
-In branch: primera-entrega
+| Submission | Branch Link
+|------------|---------------------------------------------------------------------------------------|
+| 1          | [`primera-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/primera-entrega)  |
+| 2          | [`segunda-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/segunda-entrega) |
