@@ -234,8 +234,6 @@ static void gen_stmt(AST *n, FILE *out) {
         break;
     }
 
-    if (n->next)
-        gen_stmt(n->next, out);
 }
 
 void generate_tac(AST *root, FILE *out) {
