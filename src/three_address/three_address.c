@@ -245,6 +245,5 @@ void generate_tac(AST *root, FILE *out) {
     if (!root)
         return;
 
-    emit(out, "# Three-address code generated");
     gen_stmt(root, out);
 }
