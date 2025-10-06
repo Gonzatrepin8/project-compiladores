@@ -2,10 +2,10 @@
 #define BUILDSYMTAB_H
 
 #include "../ast/ast.h"
-#include "symtab.h"
 #include "../utils/utils.h"
-#include <stdio.h>
+#include "symtab.h"
 #include <stdbool.h>
+#include <stdio.h>
 
 extern bool semantic_error;
 

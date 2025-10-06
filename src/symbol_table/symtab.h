@@ -1,26 +1,21 @@
 #ifndef SYMTAB_H
 #define SYMTAB_H
 
-#include <stdbool.h>
 #include "../ast/ast.h"
 #include <stdbool.h>
 
-typedef enum {
-    FUNCTION,
-    VARIABLE,
-    PARAMETER
-} flags;
+typedef enum { FUNCTION, VARIABLE, PARAMETER } flags;
 
 typedef struct Symbol {
-    Info *info;
-    struct Symbol *next;
+  Info *info;
+  struct Symbol *next;
 } Symbol;
 
 typedef struct SymTab {
-    struct SymTab *parent;
-    int level;
-    bool is_function;
-    Symbol *head;
+  struct SymTab *parent;
+  int level;
+  bool is_function;
+  Symbol *head;
 } SymTab;
 
 SymTab *symtab_new(void);
