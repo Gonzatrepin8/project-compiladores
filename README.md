@@ -29,4 +29,4 @@ make test
 |------------|---------------------------------------------------------------------------------------|
 | 1          | [`primera-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/primera-entrega)  |
 | 2          | [`segunda-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/segunda-entrega)  |
-| 3          | [`segunda-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/tercer-entrega)   |
+| 3          | [`tercer-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/tercer-entrega)   |
