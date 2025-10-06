@@ -7,6 +7,7 @@
 #include "symbol_table/symtab.h"
 #include "symbol_table/build_symtab.h"
 #include "type_check/type_check.h"
+#include "three_address/three_address.h"
 
 extern int yylex(void);
 extern void yyerror(const char *s);
@@ -20,24 +21,27 @@ extern FILE *lexout;
 FILE *semout;
 FILE *sintout;
 FILE *symout;
+FILE *ciout;
 char lex_filename[256];
 char sint_filename[256];
 char sent_filename[256];
 char sym_filename[256];
+char ci_filename[256];
 
 extern AST *root;
 
 typedef enum {
-    TARGET_FULL,
     TARGET_SCAN,
-    TARGET_PARSE
+    TARGET_PARSE,
+    TARGET_THREEADDR,
+    TARGET_FULL,
 } TargetStage;
 
 TargetStage target_stage = TARGET_FULL;
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s [-debug] [-target scan|parse] <sourcefile>\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-debug] [-target scan|parse|codinter] <sourcefile>\n", argv[0]);
         return 1;
     }
 
@@ -55,7 +59,10 @@ int main(int argc, char **argv) {
                 target_stage = TARGET_SCAN;
             } else if (strcmp(argv[argi+1], "parse") == 0) {
                 target_stage = TARGET_PARSE;
-            } else {
+            } else if (strcmp(argv[argi+1], "codinter") == 0) {
+                target_stage = TARGET_THREEADDR;
+            }
+            else {
                 fprintf(stderr, "Unknown target: %s (expected scan|parse)\n", argv[argi+1]);
                 return 1;
             }
@@ -98,6 +105,7 @@ int main(int argc, char **argv) {
     snprintf(sint_filename, sizeof(sint_filename), "output/%s.sint", base);
     snprintf(sent_filename, sizeof(sent_filename), "output/%s.sem", base);
     snprintf(sym_filename, sizeof(sym_filename), "output/%s.sym", base);
+    snprintf(ci_filename, sizeof(ci_filename), "output/%s.ci", base);
 
     lexout = fopen(lex_filename, "w");
     if (!lexout) { perror("fopen lex"); return 1; }
@@ -105,10 +113,13 @@ int main(int argc, char **argv) {
         sintout = fopen(sint_filename, "w");
         if (!sintout) { perror("fopen sint"); return 1; }
     }
-    if (target_stage == TARGET_FULL) {
+    if (target_stage >= TARGET_THREEADDR) {
         semout = fopen(sent_filename, "w");
         symout = fopen(sym_filename, "w");
-        if (!semout || !symout) { perror("fopen sem"); return 1; }
+        ciout = fopen(ci_filename, "w");
+        if (!semout || !symout || !ciout) { perror("fopen sem"); return 1; }
+    }
+    if (target_stage == TARGET_FULL) {
     }
 
     int result = 0;
@@ -125,7 +136,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        if (target_stage == TARGET_FULL && result == 0) {
+        if (target_stage >= TARGET_THREEADDR && result == 0) {
             if (root) {
                 SymTab *global = symtab_new();
                 TypeInfo res = build_symtab(root, global, symout);
@@ -156,7 +167,11 @@ int main(int argc, char **argv) {
                     fprintf(stderr, "Type check error.\n");
                     return 1;
                 }
+                generate_tac(root, ciout);
             }
+        }
+
+        if (target_stage == TARGET_FULL) {
         }
     }
 
@@ -165,9 +180,12 @@ int main(int argc, char **argv) {
     if (target_stage >= TARGET_PARSE) {
         fclose(sintout);
     }
-    if (target_stage == TARGET_FULL) {
+    if (target_stage >= TARGET_THREEADDR) {
         fclose(semout);
         fclose(symout);
+        fclose(ciout);
+    }
+    if (target_stage == TARGET_FULL) {
     }
 
     if (debug_mode) {
@@ -189,7 +207,7 @@ int main(int argc, char **argv) {
             }
         }
 
-        if (target_stage == TARGET_FULL) {
+        if (target_stage >= TARGET_THREEADDR) {
             f = fopen(sent_filename, "r");
             if(f) {
                 printf("---- AST (%s) ----\n", sent_filename);
@@ -205,6 +223,17 @@ int main(int argc, char **argv) {
                 while((c = fgetc(f)) != EOF) putchar(c);
                 fclose(f);
             }
+
+            f = fopen(ci_filename, "r");
+            if (f) {
+                printf("---- Three-address code Output (%s) ----\n", ci_filename);
+                char c;
+                while ((c = fgetc(f)) != EOF) putchar(c);
+                fclose(f);
+            }
+        }
+
+        if (target_stage == TARGET_FULL) {
         }
         
     }
