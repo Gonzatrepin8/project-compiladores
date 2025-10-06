@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
             argi++;
         } else if (strcmp(argv[argi], "-target") == 0) {
             if (argi + 1 >= argc) {
-                fprintf(stderr, "-target requires an argument (scan|parse)\n");
+                fprintf(stderr, "-target requires an argument (scan|parse|codinter)\n");
                 return 1;
             }
             if (strcmp(argv[argi+1], "scan") == 0) {
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
                 target_stage = TARGET_THREEADDR;
             }
             else {
-                fprintf(stderr, "Unknown target: %s (expected scan|parse)\n", argv[argi+1]);
+                fprintf(stderr, "Unknown target: %s (expected scan|parse|codinter)\n", argv[argi+1]);
                 return 1;
             }
             argi += 2;
