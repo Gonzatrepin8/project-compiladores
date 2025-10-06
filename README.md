@@ -28,4 +28,5 @@ make test
 | Submission | Branch Link
 |------------|---------------------------------------------------------------------------------------|
 | 1          | [`primera-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/primera-entrega)  |
-| 2          | [`segunda-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/segunda-entrega) |
+| 2          | [`segunda-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/segunda-entrega)  |
+| 3          | [`segunda-entrega`](https://github.com/Gonzatrepin8/project-compiladores/tree/tercer-entrega)   |
