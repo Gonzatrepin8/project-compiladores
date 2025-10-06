@@ -1,4 +1,4 @@
-# Taller y Diseño de Software
+# Taller de Diseño de Software
 
 This repository has a Makefile that you can use to compile our compiler. You can run this Makefile script with the command:
 
