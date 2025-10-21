@@ -111,7 +111,7 @@ static void print_tac_list(FILE *out, TAC *head) {
             fprintf(out, "end function\n");
             break;
         case TAC_EXTERN:
-            fprintf(out, "extern\n");
+            fprintf(out, "extern %s:\n", head->target);
             break;
         default:
             fprintf(out, "%s = ?(%d)\n", head->target ? head->target : "?", head->op);
@@ -277,26 +277,24 @@ static void gen_stmt(AST *n, FILE *out) {
 
       case NODE_FUNCTION: {
         const char *fname = n->info && n->info->name ? n->info->name : "(func)";
-        emit_tac(TAC_DEFUNC, NULL, NULL, fname);
-
-        if (n->left) {
-            AST *p = n->left;
-            int i = 0;
-            while (p) {
-                emit_tac(TAC_PARAM, p->info->name, NULL, NULL);
-                p = p->next;
+        if (n->right->type == NODE_EXTERN){
+            emit_tac(TAC_EXTERN, NULL, NULL, fname);
+        } else {
+        
+            emit_tac(TAC_DEFUNC, NULL, NULL, fname);
+        
+            if (n->left) {
+                AST *p = n->left;
+                int i = 0;
+                while (p) {
+                    emit_tac(TAC_PARAM, p->info->name, NULL, NULL);
+                    p = p->next;
+                }
             }
-        }
 
-        if (n->right) {
-            if (n->right->type == NODE_EXTERN) {
-                emit_tac(TAC_EXTERN, NULL, NULL, NULL);
-            } else {
-                gen_stmt(n->right, out);
-            }
+            if (n->right) gen_stmt(n->right, out);
+            emit_tac(TAC_ENDFUNC, NULL, NULL, NULL);
         }
-
-        emit_tac(TAC_ENDFUNC, NULL, NULL, NULL);
         break;
     }
 

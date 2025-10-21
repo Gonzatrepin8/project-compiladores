@@ -6,6 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int in_func_param_phase = 0;
+static int func_param_index = 0;
+
+
 typedef struct VarMap {
     char *name;
     int   offset;
@@ -188,12 +192,51 @@ void generate_assembly(FILE *out) {
     free_var_map();
 
     while (n) {
+        if (in_func_param_phase && n->op != TAC_PARAM) {
+        in_func_param_phase = 0;
+        }
         switch (n->op) {
-        case TAC_DEFUNC: {
-            params_reset();
-            free_var_map();
-            asm_write_header(out, n->target);
-            in_function = 1;
+                case TAC_DEFUNC: {
+            // Miramos hacia adelante para ver si esta función es "extern"
+            TAC *p = n->next;
+            // saltamos PARAMs
+            while (p && p->op == TAC_PARAM) p = p->next;
+
+            if (p && p->op == TAC_EXTERN) {
+                // Función declarada extern: emitimos solo .extern <name>
+                if (n->target && *n->target) {
+                    fprintf(out, "    .extern %s\n", n->target);
+                } else {
+                    fprintf(out, "    # [WARN] DEFUNC sin nombre seguido de EXTERN\n");
+                }
+
+                // Avanzar n hasta el TAC_ENDFUNC para saltar el "cuerpo"
+                while (n && n->op != TAC_ENDFUNC) {
+                    n = n->next;
+                }
+                // n apuntará al ENDFUNC; el loop principal hará n = n->next,
+                // así que dejamos que continúe desde allí (no emitimos prologo).
+                // Aseguramos limpiar estado relacionado con params/varmap
+                params_reset();
+                free_var_map();
+                in_function = 0;
+                in_func_param_phase = 0;
+                func_param_index = 0;
+            } else {
+                // No es extern: generamos prologo normalmente
+                params_reset();
+                free_var_map();
+                asm_write_header(out, n->target);
+                in_function = 1;
+                in_func_param_phase = 1;
+                func_param_index = 0;
+            }
+        } break;
+        
+        case TAC_EXTERN: {
+        if (n->target && *n->target) {
+                fprintf(out, "    .extern %s\n", n->target);
+            }
         } break;
 
         case TAC_ENDFUNC: {
@@ -201,9 +244,6 @@ void generate_assembly(FILE *out) {
             in_function = 0;
             params_reset();
             free_var_map();
-        } break;
-
-        case TAC_EXTERN: {
         } break;
 
         case TAC_LABEL: {
@@ -322,7 +362,29 @@ void generate_assembly(FILE *out) {
         } break;
 
         case TAC_PARAM: {
-            params_push(n->arg1);
+            if (in_function && in_func_param_phase) {
+                // Estamos declarando parámetros de la función actual.
+                // n->arg1 contiene el nombre del parámetro.
+                const char *pname = n->arg1 ? n->arg1 : "(param)";
+                int off = ensure_offset(pname, out); // reserva espacio y devuelve offset
+
+                // Registros donde vienen los primeros 6 params:
+                static const char *in_regs[] = { "%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d" };
+
+                if (func_param_index < 6) {
+                    fprintf(out, "    movl    %s, -%d(%%rbp)\n", in_regs[func_param_index], off);
+                } else {
+                    // Parámetros >6: el llamador los pone en la pila. No los manejamos aquí
+                    // (podrías leerlos desde 16(%rbp) + ((func_param_index-6)*8) si los caller
+                    //  arroja en la pila, dependiendo de alineación). Por ahora, emite un comentario.
+                    fprintf(out, "    # [WARN] parametro %s en stack (index %d) no soportado\n",
+                            pname, func_param_index);
+                }
+                func_param_index++;
+            } else {
+                // Es un TAC_PARAM para una llamada: push al arreglo pending.
+                params_push(n->arg1);
+            }
         } break;
 
         case TAC_CALL: {
