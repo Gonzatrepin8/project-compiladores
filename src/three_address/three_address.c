@@ -6,7 +6,8 @@
 
 static int tmp_counter = 0;
 static int label_counter = 0;
-static TAC *tac_head = NULL;
+
+TAC *tac_head = NULL;
 static TAC *tac_tail = NULL;
 
 static char *new_temp(void) {
@@ -205,8 +206,8 @@ static char *gen_expr(AST *n, FILE *out) {
             argnum++;
         }
         char *res = new_temp();
-        char num_params[10];
-        sprintf(num_params, "%d", argnum);
+        char num_params[16];
+        snprintf(num_params, sizeof(num_params), "%d", argnum);
         emit_tac(TAC_CALL, n->info->name, num_params, res);
         return res;
     }
