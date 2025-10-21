@@ -1,15 +1,10 @@
 #ifndef SYMTAB_H
 #define SYMTAB_H
 
-#include <stdbool.h>
 #include "../ast/ast.h"
 #include <stdbool.h>
 
-typedef enum {
-    FUNCTION,
-    VARIABLE,
-    PARAMETER
-} flags;
+typedef enum { FUNCTION, VARIABLE, PARAMETER } flags;
 
 typedef struct Symbol {
     Info *info;

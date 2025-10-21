@@ -1,8 +1,8 @@
 #ifndef AST_H
 #define AST_H
 
-#include <stdio.h>
 #include "../parser.tab.h"
+#include <stdio.h>
 
 typedef enum {
     NODE_INT,
@@ -31,18 +31,18 @@ typedef enum {
     TYPE_ERROR
 } TypeInfo;
 
-typedef struct Params{
-    char* param_name;
+typedef struct Params {
+    char *param_name;
     TypeInfo param_type;
     struct Params *next;
 } Params;
 
 typedef struct Info {
-    char* name;
+    char *name;
     int ival;
     int bval;
     int scope;
-    char* op;
+    char *op;
     TypeInfo eval_type;
     int is_function;
     Params *params;
@@ -56,11 +56,11 @@ typedef struct AST {
     struct AST *next;
 } AST;
 
-AST *make_node(NodeType type, char *name, int ival, int bval,
-               char* op, AST *left, AST *right);
+AST *make_node(NodeType type, char *name, int ival, int bval, char *op,
+               AST *left, AST *right);
 
 void print_ast(AST *n, int depth, int is_last);
 
-const char* type_to_string(TypeInfo t);
+const char *type_to_string(TypeInfo t);
 
 #endif

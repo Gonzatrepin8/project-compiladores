@@ -1,0 +1,301 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}  
+\usepackage{setspace}  
+\usepackage{hyperref}
+\usepackage{verbatim}
+\usepackage{amsmath, amssymb}
+
+
+\geometry{
+    top=2cm,
+    bottom=2cm,
+    left=2.5cm,
+    right=2.5cm
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+
+    
+    {\Huge \textbf{Universidad Nacional de Río Cuarto}}\\[0.5cm]
+    {\Large Facultad de Cs Exactas}\\[0.5cm]
+    {\Large Carrera de Licenciatura en Ciencias de la Computación}\\[2cm]
+    
+    {\LARGE \textbf{Taller de Diseño de Software}}\\[0.5cm]
+    {\large Profesor: Francisco Bavera (Pancho)}\\[2cm]
+    
+    \textbf{Integrantes:}\\[0.2cm]
+    Gonzalo Trepin\\
+    Esteban Galucci\\
+    Florencia Hernández\\[2cm]
+
+    \vfill
+
+    \textbf{Informe de Proyecto de Compiladores}\\[0.5cm]
+    \today
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+
+\section{Análisis Léxico}
+
+\subsection{División del trabajo}
+En esta etapa trabajamos en conjunto. La principal tarea consistió en reconocer los tokens del lenguaje 
+(palabras reservadas, identificadores, literales, operadores, símbolos y comentarios) y plasmarlos en el archivo \texttt{flex.l}.
+
+\subsection{Decisiones de diseño y asunciones}
+El analizador léxico fue implementado con \textbf{Flex}, generando el archivo \texttt{lex.yy.c}.
+Se nos proporcionó un listado de tokens y reglas exactas. Sin embargo, la definición de ciertos elementos, 
+como los identificadores, la dedujimos directamente de la gramática.
+
+Por decisión de diseño, cada token reconocido se imprime en un archivo de salida (\texttt{lexout}) con fines de depuración, 
+lo cual permitió seguir el flujo del análisis léxico de manera clara.
+
+\subsection{Diseño y decisiones clave}
+\begin{itemize}
+    \item Los identificadores se reconocen mediante la expresión:
+    \begin{verbatim}
+{letra}({letra}|{digito}|_)*
+    \end{verbatim}
+    asegurando que comiencen con una letra y luego puedan incluir letras, dígitos o guiones bajos.
+    
+    \item Los literales enteros se reconocen mediante:
+    \begin{verbatim}
+{digito}+
+    \end{verbatim}
+    convirtiendo el texto a entero con \texttt{atoi}.
+    
+    \item Los literales booleanos se mapean directamente a los valores \texttt{true} y \texttt{false}.
+    
+    \item Los comentarios de una línea se manejan con \texttt{//.*}, mientras que los comentarios multilínea se manejan con:
+    \begin{verbatim}
+"/*"([^*]|\n|(\*+[^*/]))*"*/
+    \end{verbatim}
+\end{itemize}
+
+\subsection{Detalles interesantes}
+Un detalle particular fue la necesidad de manejar comentarios multilínea. Si bien logramos implementar 
+una expresión regular que funciona en la mayoría de los casos, aún presenta problemas en situaciones 
+de \textbf{comentarios anidados}, esto todavia esta pendiente de solucionar, aunque no lo consifderamos algo critico, por lo que puede esperar.
+
+\section{Análisis Sintáctico (Parser)}
+
+\subsection{Decisiones de diseño y asunciones}
+La gramática proporcionada contenía \textbf{ambigüedades} y algunas expresiones regulares. Por lo tanto, el primer paso fue \textbf{desambiguar la gramática y eliminar las expresiones regulares}, traduciendo estas reglas a una forma compatible con Bison sin perder el significado del lenguaje.
+
+Para manejar operadores, se definieron precedencias usando \texttt{\%left} y \texttt{\%prec} para diferenciar operadores unarios y binarios.
+
+\subsection{Diseño y decisiones clave}
+\begin{itemize}
+    \item \textbf{Asociación de operadores:} Problemas de ambigüedad se resolvieron usando las directivas \texttt{\%left} y \texttt{\%right} de Bison.
+    
+    \item \textbf{Operador unario vs binario:} El operador \texttt{-} podía aparecer tanto como unario (negación) o binario (resta). Esto se resolvió usando la directiva \texttt{\%prec UMINUS} en la regla correspondiente, diferenciando correctamente los contextos.
+    
+    \item \textbf{Conflictos shift/reduce por derivaciones vacías:}  
+    La gramática original permitía que ciertas reglas, como \texttt{var\_decls} y \texttt{method\_decls}, derivaran a \(\lambda\) (cadena vacía), provocando conflictos shift/reduce.  
+    Por ejemplo, la regla original:
+    \begin{verbatim}
+program : PROGRAM '{' var_decls method_decls '}';
+    \end{verbatim}
+    se transformó en:
+    \begin{verbatim}
+program
+    : PROGRAM '{' var_decls method_decls '}'
+    | PROGRAM '{' var_decls '}'
+    | PROGRAM '{' method_decls '}'
+    | PROGRAM '{' '}'
+    ;
+    \end{verbatim}
+    Esto elimino la necesidad de tener la regla vacia en \texttt{var\_decls} y \texttt{method\_decls} , cubriendo todos los casos posibles y eliminando los conflictos.
+\end{itemize}
+
+\subsection{Detalles de implementación interesantes}
+\begin{itemize}
+    \item Uso de \texttt{\%prec UMINUS} para diferenciar operadores unarios y binarios.
+    \item Expansión de reglas para eliminar derivaciones vacías y prevenir conflictos shift/reduce.
+\end{itemize}
+
+\subsection{Problemas conocidos}
+Hasta el momento, el parser reconoce correctamente todos los constructos del lenguaje. No se han detectado conflictos sintácticos pendientes.
+
+\section{Construcción del Árbol de Sintaxis Abstracta (AST)}
+
+Para la construcción del AST, reutilizamos la definición que habíamos hecho en el pre-proyecto extendiendo la estructura existente para adaptarla al lenguaje completo.
+
+\subsection{Decisiones de diseño y asunciones}
+Se agregaron nuevos tipos de nodos que no estaban presentes en el pre-proyecto, ya que el lenguaje actual los requería: \texttt{NODE\_UNOP}, \texttt{NODE\_WHILE}, \texttt{NODE\_IF}, \texttt{NODE\_PROG}, \texttt{NODE\_CALL} y \texttt{NODE\_PARAM}.
+
+Cada nodo del AST contiene:
+\begin{itemize}
+    \item \textbf{Tipo de nodo (\texttt{NodeType}):} indica la categoría sintáctica (por ejemplo, entero, booleano, asignación, binop, función, etc.).
+    \item \textbf{Campo \texttt{info}:} almacena información relevante, como nombre de variable o función, valor de literales enteros (\texttt{ival}) o booleanos (\texttt{bval}), y tipo de evaluación (\texttt{eval\_type}).  
+    El \texttt{eval\_type} permite determinar el tipo de retorno de funciones o de expresiones, y será útil en el futuro chequeo de tipos.
+\end{itemize}
+
+Actualmente, todos los nodos reservan espacio para la misma información, aunque muchos nodos no lo usan. Esto podría optimizarse en el futuro definiendo distintos tipos de \texttt{info} según el nodo.
+
+\subsection{Diseño y decisiones clave}
+\begin{itemize}
+    \item Cada nodo puede tener un \textbf{hijo izquierdo}, un \textbf{hijo derecho} y un \textbf{nodo \texttt{next}} que apunta al hermano derecho. Esto permite representar listas de elementos (por ejemplo, listas de sentencias, parámetros o argumentos) de manera sencilla.
+    \item Se construye el AST de manera incremental durante el parseo, usando las acciones de Bison para crear nodos y conectarlos.
+    \item Para nodos de funciones y variables, se inicializa \texttt{eval\_type} según el tipo declarado (\texttt{integer}, \texttt{bool}, \texttt{void}).
+    \item Para operadores binarios (\texttt{BINOP}), el tipo se determinará una vez que se conozcan los tipos de los hijos. Esto permitirá validar operaciones y asignar correctamente \texttt{eval\_type} al nodo padre.
+    \item Se mantuvo una estructura de árbol flexible que rompe ligeramente el concepto de árbol binario, pero simplifica el manejo de listas y recorridos.
+\end{itemize}
+
+\subsection{Detalles de implementación interesantes}
+\begin{itemize}
+    \item El nodo \texttt{next} facilita recorrer listas de nodos, por ejemplo para iterar sobre parámetros de funciones o sentencias dentro de un bloque.
+    \item Cada acción en Bison llama a \texttt{make\_node} para crear nodos con la información correspondiente y conectarlos según la estructura del AST.
+    \item Literales enteros y booleanos se crean directamente con su valor y tipo asociado (\texttt{TYPE\_INT}, \texttt{TYPE\_BOOL}).
+\end{itemize}
+
+\section{Tabla de Símbolos y Análisis Semántico}
+
+En esta etapa, se realizo la construcción de la tabla de símbolos y el etiquetado del AST, para la tabla de simbolos se implemento la estructura y se construye recorriendo el arbol.
+
+\subsection{Diseño y decisiones clave}
+\begin{itemize}
+    \item La tabla de símbolos (\texttt{SymTab}) se implementa como una estructura anidada con puntero a \texttt{parent} y un nivel de \texttt{scope}.  
+    Menor nivel indica mayor jerarquía, de modo que el nivel 0 corresponde al scope global.
+    \item Cada vez que se encuentra un nodo \texttt{BLOCK} en el AST, se abre un nuevo scope en la tabla de símbolos. cuando este bloque termina. se "desapila" toda la infomracion recolectada en ese nivel. esto tiene la desventaja que la tabla se construye y se destruye en el mismo momento de crearse. pero para la utilidad que le damos este funcionamiento es optimo.  
+    los niveles nos permiten manejar variables locales y globales de manera jerárquica, siguiendo el concepto de pila de scopes.
+    \item Cada nodo \texttt{ID} o \texttt{CALL} en el AST se "etiqueta" (\textit{labeling}) con su información correspondiente en la tabla de símbolos ya que ambas estructuras almacenan el mismo struct INFO.   
+    Es decir, el campo \texttt{info} del nodo apunta a la misma estructura \texttt{Info} que se encuentra en la tabla.
+    \item Gracias a la jerarquía de niveles, siempre se toma la última declaración válida del símbolo en el scope más cercano. Por ejemplo:
+    \begin{verbatim}
+    integer x = 7;
+    bool test() {
+        integer x = 6;
+        return x == 7;
+    }
+    \end{verbatim}
+    Al evaluar \texttt{x == 7} dentro de \texttt{test()}, el \texttt{ID} se liga al \texttt{x} local cuyo valor es 6 ya que la otra declaracion de x se encuentra un nivel mas atras.
+    \item Se tomó la decisión de que los parámetros de una función pertenezcan al mismo nivel que el bloque de la función.  
+    Para esto se distingue en \texttt{Info} si un nodo representa una función(ya que por el funcinamiento previo los parametros quedaban al mismo nivel que la declaracion de la funcion y no al nivel de su bloque), se almacena una lista de parámetros y el nivel de scope inicial es -1 hasta etiquetar el AST.
+\end{itemize}
+
+\subsection{Estructura de información}
+La información almacenada tanto en la tabla de símbolos como en los nodos del AST está definida por la siguiente estructura:
+
+\begin{verbatim}
+typedef struct Params{
+    char* param_name;
+    TypeInfo param_type;
+    struct Params *next;
+} Params;
+
+typedef struct Info {
+    char* name;
+    int ival;
+    int bval;
+    int scope;
+    char* op;
+    TypeInfo eval_type;
+    int is_function;
+    Params *params;
+} Info;
+\end{verbatim}
+
+como se ve el struct INFO sufrio cambios, los cuales tambien afectan al ast. si bien el funcionamiento no se ve afectado. a nivel arquitectural es una decision bastante pobre ya que se continua gastando memoria en informacion inutil. la mayoria de los campos se usan solo en casos especificos.
+\subsection{Detalles de implementación interesantes}
+\begin{itemize}
+    \item La tabla funciona conceptualmente como una pila: los scopes anidados permiten encontrar primero la declaración más cercana de una variable o función.
+    \item El etiquetado del AST vincula cada nodo \texttt{ID} o \texttt{CALL} a la información de la tabla de símbolos correspondiente, lo que facilita el chequeo de tipos y otras verificaciones semánticas posteriores.
+    \item Se implementan verificaciones clásicas de una tabla de símbolos: no se permite redefinir variables o funciones en el mismo scope, y se detecta uso de variables no declaradas.
+\end{itemize}
+
+\section{Chequeo de Tipos (Typecheck)}
+
+Una vez creada la tabla de símbolos y etiquetado completamente el AST, se realiza el \textit{typecheck} recorriendo el árbol y propagando los tipos hacia arriba. Cada nodo del AST contiene un campo \texttt{info->eval\_type} que almacena su tipo, lo cual permite verificar la consistencia de tipos de manera eficiente.
+
+\subsection{Recorrido del AST}
+El \textit{typecheck} se realiza mediante un recorrido completo del AST, siguiendo los nodos hijos (\texttt{left}, \texttt{right}) y hermanos (\texttt{next}). Según el tipo de nodo, se aplican las reglas de tipo correspondientes.
+
+\subsection{Chequeos realizados}
+
+\begin{itemize}
+    \item \textbf{Operaciones binarias (\texttt{NODE\_BINOP}):} 
+        \begin{itemize}
+            \item Los operandos deben tener el mismo tipo.
+            \item Operadores de comparación (\texttt{==, <, >}) producen tipo \texttt{bool}.
+            \item Operadores aritméticos (\texttt{+, -, *, /, \%}) requieren operandos enteros y producen tipo \texttt{int}.
+            \item Operadores lógicos (\texttt{\&\&, ||}) requieren operandos booleanos y producen tipo \texttt{bool}.
+        \end{itemize}
+
+    \item \textbf{Operaciones unarias (\texttt{NODE\_UNOP}):}
+        \begin{itemize}
+            \item El operador \texttt{-} requiere un entero.
+            \item El operador \texttt{!} requiere un booleano.
+            \item El tipo del nodo se hereda del hijo.
+        \end{itemize}
+
+    \item \textbf{Asignaciones (\texttt{NODE\_ASSIGN}):} 
+        \begin{itemize}
+            \item El tipo de la variable debe coincidir con el tipo de la expresión asignada.
+        \end{itemize}
+
+    \item \textbf{Declaraciones de variables (\texttt{NODE\_VAR\_DECL}):}
+        \begin{itemize}
+            \item Se chequea el tipo de la expresión de inicialización.
+        \end{itemize}
+
+    \item \textbf{Retornos (\texttt{NODE\_RETURN}):}
+        \begin{itemize}
+            \item Si no hay expresión se espera \texttt{void}.
+            \item Si hay expresión, se compara con el tipo de la función (\texttt{func\_type}).
+        \end{itemize}
+
+    \item \textbf{Funciones (\texttt{NODE\_FUNCTION}):}
+        \begin{itemize}
+            \item Se guarda el tipo de la función en \texttt{func\_type}.
+            \item Se chequean los tipos de parámetros y del bloque de la función.
+        \end{itemize}
+
+    \item \textbf{Bloques, condicionales y bucles (\texttt{NODE\_BLOCK, NODE\_IF, NODE\_WHILE}):}
+        \begin{itemize}
+            \item Se asegura que las expresiones de condición sean booleanas.
+        \end{itemize}
+
+    \item \textbf{Llamadas a funciones (\texttt{NODE\_CALL}):}
+        \begin{itemize}
+            \item Se comparan los tipos de parámetros reales con los formales.
+            \item Se detecta exceso o falta de parámetros.
+        \end{itemize}
+\end{itemize}
+
+\subsection{Manejo de errores}
+Cada discrepancia de tipos genera un mensaje de error indicando el tipo esperado y el tipo real. Se utiliza la variable global \texttt{type\_check\_error} para registrar si hubo errores durante el chequeo.  
+El recorrido continúa para detectar múltiples errores antes de detener la ejecución.
+luego de creer terminado el analisis de tipos, detectamos varios errores mas. por ejemplo para una operacion booleana de == la logica que seguiamos en typecheck era simplemente, mirar que el tipo de sus operandos sean iguales. esto a priori deberia funcionar, pero el lenguaje aceptaba cosas del tipo \texttt{void f()\{\} void main()\{bool test = f() == f();\}} esto carece de sentido. otro error que pudimos encontrar fue que podiamos llamar a funciones no existentes. es decir era valido \texttt{integer x = 0; integer y = x();} esto era por un error en la busqueda en la tabla de simbolos, ya que simplemente buscaba el primer identificador que coincida en nombre sin vericar si este es funcion o no. estos errores fueron arreglados.
+
+\subsection{Uso de \texttt{eval\_type}}
+Cada nodo del AST almacena su tipo en \texttt{info->eval\_type}, lo que permite propagar el tipo desde los hijos hacia los padres y verificar asignaciones, retornos y llamadas a funciones.
+
+\subsection{Ventajas del diseño}
+\begin{itemize}
+    \item Integración directa con la tabla de símbolos: cada nodo \texttt{ID} o \texttt{CALL} ya está etiquetado con su \texttt{info}.
+    \item Chequeo de tipos consistente con la jerarquía de scopes.
+    \item Permite detectar errores de manera precisa y localizada.
+\end{itemize}
+
+\subsection{Limitaciones y mejoras}
+\begin{itemize}
+    \item Los mensajes de error no incluyen la línea exacta.
+    \item No se implementan coerciones de tipos; todo debe coincidir exactamente.
+    \item Se podría optimizar separando el chequeo de expresiones y declaraciones en funciones independientes.
+\end{itemize}
+
+\end{document}
+
+
