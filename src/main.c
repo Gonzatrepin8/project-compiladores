@@ -8,6 +8,7 @@
 #include "symbol_table/build_symtab.h"
 #include "type_check/type_check.h"
 #include "three_address/three_address.h"
+#include "assembly/assembly_gen.h"
 
 extern int yylex(void);
 extern void yyerror(const char *s);
@@ -22,11 +23,13 @@ FILE *semout;
 FILE *sintout;
 FILE *symout;
 FILE *ciout;
+FILE *asmout;
 char lex_filename[256];
 char sint_filename[256];
 char sent_filename[256];
 char sym_filename[256];
 char ci_filename[256];
+char asm_filename[256];
 
 extern AST *root;
 
@@ -34,6 +37,7 @@ typedef enum {
     TARGET_SCAN,
     TARGET_PARSE,
     TARGET_THREEADDR,
+    TARGET_ASSEMBLY,
     TARGET_FULL,
 } TargetStage;
 
@@ -41,7 +45,7 @@ TargetStage target_stage = TARGET_FULL;
 
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s [-debug] [-target scan|parse|codinter] <sourcefile>\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-debug] [-target scan|parse|codinter|assembly] <sourcefile>\n", argv[0]);
         return 1;
     }
 
@@ -52,7 +56,7 @@ int main(int argc, char **argv) {
             argi++;
         } else if (strcmp(argv[argi], "-target") == 0) {
             if (argi + 1 >= argc) {
-                fprintf(stderr, "-target requires an argument (scan|parse|codinter)\n");
+                fprintf(stderr, "-target requires an argument (scan|parse|codinter|assembly)\n");
                 return 1;
             }
             if (strcmp(argv[argi+1], "scan") == 0) {
@@ -61,9 +65,11 @@ int main(int argc, char **argv) {
                 target_stage = TARGET_PARSE;
             } else if (strcmp(argv[argi+1], "codinter") == 0) {
                 target_stage = TARGET_THREEADDR;
+            } else if (strcmp(argv[argi+1], "assembly") == 0) {
+                target_stage = TARGET_ASSEMBLY;
             }
             else {
-                fprintf(stderr, "Unknown target: %s (expected scan|parse|codinter)\n", argv[argi+1]);
+                fprintf(stderr, "Unknown target: %s (expected scan|parse|codinter|assembly)\n", argv[argi+1]);
                 return 1;
             }
             argi += 2;
@@ -106,6 +112,7 @@ int main(int argc, char **argv) {
     snprintf(sent_filename, sizeof(sent_filename), "output/%s.sem", base);
     snprintf(sym_filename, sizeof(sym_filename), "output/%s.sym", base);
     snprintf(ci_filename, sizeof(ci_filename), "output/%s.ci", base);
+    snprintf(asm_filename, sizeof(asm_filename), "output/%s.s", base);
 
     lexout = fopen(lex_filename, "w");
     if (!lexout) { perror("fopen lex"); return 1; }
@@ -118,6 +125,10 @@ int main(int argc, char **argv) {
         symout = fopen(sym_filename, "w");
         ciout = fopen(ci_filename, "w");
         if (!semout || !symout || !ciout) { perror("fopen sem"); return 1; }
+    }
+    if (target_stage == TARGET_ASSEMBLY) {
+        asmout = fopen(asm_filename, "w");
+        if (!asmout) { perror("fopen assembly"); return 1; }
     }
     if (target_stage == TARGET_FULL) {
     }
@@ -168,13 +179,17 @@ int main(int argc, char **argv) {
                     return 1;
                 }
                 generate_tac(root, ciout);
+                if (target_stage == TARGET_ASSEMBLY) {
+                    generate_assembly(asmout);
+                    printf("Assembly file generated: %s\n", asm_filename);
+                }
             }
-        }
 
-        if (target_stage == TARGET_FULL) {
-        }
+            if (target_stage == TARGET_FULL) {
+            }
+        }   
     }
-
+    
     fclose(yyin);
     fclose(lexout);
     if (target_stage >= TARGET_PARSE) {
@@ -185,6 +200,7 @@ int main(int argc, char **argv) {
         fclose(symout);
         fclose(ciout);
     }
+    if (target_stage == TARGET_ASSEMBLY) fclose(asmout);
     if (target_stage == TARGET_FULL) {
     }
 
@@ -227,6 +243,15 @@ int main(int argc, char **argv) {
             f = fopen(ci_filename, "r");
             if (f) {
                 printf("---- Three-address code Output (%s) ----\n", ci_filename);
+                char c;
+                while ((c = fgetc(f)) != EOF) putchar(c);
+                fclose(f);
+            }
+        }
+        if (target_stage == TARGET_ASSEMBLY) {
+            f = fopen(asm_filename, "r");
+            if (f) {
+                printf("---- Assembly code Output (%s) ----\n", asm_filename);
                 char c;
                 while ((c = fgetc(f)) != EOF) putchar(c);
                 fclose(f);
