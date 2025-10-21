@@ -42,4 +42,6 @@ typedef struct TAC {
     struct TAC* next;
 } TAC;
 
+extern TAC *tac_head;
+
 #endif
