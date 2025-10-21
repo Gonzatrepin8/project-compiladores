@@ -11,6 +11,7 @@ BUILDSYMTAB_SRC = $(SRCDIR)/symbol_table/build_symtab.c
 UTILS_SRC = $(SRCDIR)/utils/utils.c
 TYPECHECK_SRC = $(SRCDIR)/type_check/type_check.c
 THREE_ADDRESS_SRC = $(SRCDIR)/three_address/three_address.c
+ASSEMBLY_SRC = $(SRCDIR)/assembly/assembly_gen.c
 MAIN_SRC = $(SRCDIR)/main.c
 
 LEX_OBJ = $(SRCDIR)/lex.yy.c
@@ -22,6 +23,7 @@ BUILDSYMTAB_OBJ = $(SRCDIR)/symbol_table/build_symtab.o
 UTILS_OBJ = $(SRCDIR)/utils/utils.o
 TYPECHECK_OBJ = $(SRCDIR)/type_check/type_check.o
 THREE_ADDRESS_OBJ = $(SRCDIR)/three_address/three_address.o
+ASSEMBLY_OBJ = $(SRCDIR)/assembly/assembly_gen.o
 MAIN_OBJ = $(SRCDIR)/main.o
 EXEC = c-tds
 
@@ -51,15 +53,18 @@ $(TYPECHECK_OBJ): $(TYPECHECK_SRC)
 $(THREE_ADDRESS_OBJ): $(THREE_ADDRESS_SRC)
 	$(CC) -c $(THREE_ADDRESS_SRC) $(CFLAGS) -o $@
 
+$(ASSEMBLY_OBJ): $(ASSEMBLY_SRC)
+	$(CC) -c $(ASSEMBLY_SRC) $(CFLAGS) -Isrc/assembly -o $@
+
 $(MAIN_OBJ): $(MAIN_SRC)
 	$(CC) -c $(MAIN_SRC) $(CFLAGS) -o $@
 
-$(EXEC): $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(TYPECHECK_OBJ) $(THREE_ADDRESS_OBJ) $(MAIN_OBJ) $(UTILS_OBJ)
-	$(CC) $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(TYPECHECK_OBJ) $(UTILS_OBJ) $(THREE_ADDRESS_OBJ) $(MAIN_OBJ) $(CFLAGS) -o $@
+$(EXEC): $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(TYPECHECK_OBJ) $(THREE_ADDRESS_OBJ) $(ASSEMBLY_OBJ) $(MAIN_OBJ) $(UTILS_OBJ)
+	$(CC) $(LEX_OBJ) $(YACC_OBJ) $(AST_OBJ) $(SYMTAB_OBJ) $(BUILDSYMTAB_OBJ) $(TYPECHECK_OBJ) $(UTILS_OBJ) $(THREE_ADDRESS_OBJ) $(ASSEMBLY_OBJ) $(MAIN_OBJ) $(CFLAGS) -o $@
 
 .PHONY: clean
 clean:
-	rm -f $(LEX_OBJ) $(YACC_OBJ) $(YACC_H) $(AST_OBJ) $(BUILDSYMTAB_OBJ) $(SYMTAB_OBJ) $(UTILS_OBJ) $(TYPECHECK_OBJ) $(THREE_ADDRESS_OBJ) $(MAIN_OBJ) $(EXEC)
+	rm -f $(LEX_OBJ) $(YACC_OBJ) $(YACC_H) $(AST_OBJ) $(BUILDSYMTAB_OBJ) $(SYMTAB_OBJ) $(UTILS_OBJ) $(TYPECHECK_OBJ) $(THREE_ADDRESS_OBJ) $(ASSEMBLY_OBJ) $(MAIN_OBJ) $(EXEC)
 
 .PHONY: test
 test: $(EXEC)
@@ -72,7 +77,7 @@ test: $(EXEC)
 	for testfile in $(TESTDIR)/pasan/*; do \
 		if [ -f $$testfile ]; then \
 			printf "Testing $$testfile... "; \
-			if ! ./$(EXEC) $$testfile > /dev/null 2>&1; then \
+			if ! ./$(EXEC) -target assembly $$testfile > /dev/null 2>&1; then \
 				printf "\033[0;31m[FAIL]\033[0m\n"; \
 				echo "       > ERROR: This test was expected to pass, but the compiler failed."; \
 				failed=1; \
@@ -86,7 +91,7 @@ test: $(EXEC)
 	for testfile in $(TESTDIR)/noPasan/*; do \
 		if [ -f $$testfile ]; then \
 			printf "Testing $$testfile... "; \
-			if ./$(EXEC) $$testfile > /dev/null 2>&1; then \
+			if ./$(EXEC) -target assembly $$testfile > /dev/null 2>&1; then \
 				printf "\033[0;31m[FAIL]\033[0m\n"; \
 				echo "       > ERROR: This test was expected to fail, but the compiler succeeded."; \
 				failed=1; \
