@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
         ciout = fopen(ci_filename, "w");
         if (!semout || !symout || !ciout) { perror("fopen sem"); return 1; }
     }
-    if (target_stage == TARGET_ASSEMBLY) {
+    if (target_stage >= TARGET_ASSEMBLY) {
         asmout = fopen(asm_filename, "w");
         if (!asmout) { perror("fopen assembly"); return 1; }
     }
@@ -179,9 +179,8 @@ int main(int argc, char **argv) {
                     return 1;
                 }
                 generate_tac(root, ciout);
-                if (target_stage == TARGET_ASSEMBLY) {
+                if (target_stage >= TARGET_ASSEMBLY) {
                     generate_assembly(asmout);
-                    printf("Assembly file generated: %s\n", asm_filename);
                 }
             }
 
@@ -200,7 +199,7 @@ int main(int argc, char **argv) {
         fclose(symout);
         fclose(ciout);
     }
-    if (target_stage == TARGET_ASSEMBLY) fclose(asmout);
+    if (target_stage >= TARGET_ASSEMBLY) fclose(asmout);
     if (target_stage == TARGET_FULL) {
     }
 
@@ -248,7 +247,7 @@ int main(int argc, char **argv) {
                 fclose(f);
             }
         }
-        if (target_stage == TARGET_ASSEMBLY) {
+        if (target_stage >= TARGET_ASSEMBLY) {
             f = fopen(asm_filename, "r");
             if (f) {
                 printf("---- Assembly code Output (%s) ----\n", asm_filename);
