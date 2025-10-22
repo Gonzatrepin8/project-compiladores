@@ -9,10 +9,9 @@
 static int in_func_param_phase = 0;
 static int func_param_index = 0;
 
-
 typedef struct VarMap {
     char *name;
-    int   offset;
+    int offset;
     struct VarMap *next;
 } VarMap;
 
@@ -34,16 +33,18 @@ static void free_var_map(void) {
 }
 
 static int ensure_offset(const char *name, FILE *out) {
-    if (!name) return 0;
+    if (!name)
+        return 0;
 
     for (VarMap *v = var_map_head; v; v = v->next) {
-        if (strcmp(v->name, name) == 0) return v->offset;
+        if (strcmp(v->name, name) == 0)
+            return v->offset;
     }
-    VarMap *n = (VarMap*)calloc(1, sizeof(VarMap));
-    n->name   = strdup(name);
-    current_stack_size += 8;          
-    n->offset = current_stack_size;   
-    n->next   = var_map_head;
+    VarMap *n = (VarMap *)calloc(1, sizeof(VarMap));
+    n->name = strdup(name);
+    current_stack_size += 8;
+    n->offset = current_stack_size;
+    n->next = var_map_head;
     var_map_head = n;
 
     fprintf(out, "    subq    $8, %%rsp\n");
@@ -51,11 +52,15 @@ static int ensure_offset(const char *name, FILE *out) {
 }
 
 static int is_int_literal(const char *s) {
-    if (!s || !*s) return 0;
-    if (*s == '-') ++s;
-    if (!*s) return 0;
+    if (!s || !*s)
+        return 0;
+    if (*s == '-')
+        ++s;
+    if (!*s)
+        return 0;
     while (*s) {
-        if (!isdigit((unsigned char)*s)) return 0;
+        if (!isdigit((unsigned char)*s))
+            return 0;
         ++s;
     }
     return 1;
@@ -85,7 +90,8 @@ static void store_eax_to(FILE *out, const char *dst) {
 }
 
 void asm_write_header(FILE *out, const char *func_name) {
-    if (!func_name) func_name = "func";
+    if (!func_name)
+        func_name = "func";
     if (strcmp(func_name, "main") == 0) {
         fprintf(out, "    .globl  main\n");
         fprintf(out, "main:\n");
@@ -146,7 +152,7 @@ void asm_write_cond_jump(FILE *out, const char *cond, const char *label) {
 
 #define MAX_PARAMS 32
 static char *pending_params[MAX_PARAMS];
-static int   pending_count = 0;
+static int pending_count = 0;
 
 static void params_reset(void) {
     for (int i = 0; i < pending_count; ++i) {
@@ -157,12 +163,13 @@ static void params_reset(void) {
 
 static void params_push(const char *arg) {
     if (pending_count < MAX_PARAMS) {
-        pending_params[pending_count++] = (char*)arg;
+        pending_params[pending_count++] = (char *)arg;
     }
 }
 
 static void move_arg_to_reg(FILE *out, int idx, const char *arg) {
-    static const char *areg[] = { "%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d" };
+    static const char *areg[] = {"%edi", "%esi", "%edx",
+                                 "%ecx", "%r8d", "%r9d"};
     if (idx < 6) {
         if (is_int_literal(arg)) {
             fprintf(out, "    movl    $%s, %s\n", arg, areg[idx]);
@@ -193,21 +200,24 @@ void generate_assembly(FILE *out) {
 
     while (n) {
         if (in_func_param_phase && n->op != TAC_PARAM) {
-        in_func_param_phase = 0;
+            in_func_param_phase = 0;
         }
         switch (n->op) {
-                case TAC_DEFUNC: {
+        case TAC_DEFUNC: {
             // Miramos hacia adelante para ver si esta función es "extern"
             TAC *p = n->next;
             // saltamos PARAMs
-            while (p && p->op == TAC_PARAM) p = p->next;
+            while (p && p->op == TAC_PARAM)
+                p = p->next;
 
             if (p && p->op == TAC_EXTERN) {
                 // Función declarada extern: emitimos solo .extern <name>
                 if (n->target && *n->target) {
                     fprintf(out, "    .extern %s\n", n->target);
                 } else {
-                    fprintf(out, "    # [WARN] DEFUNC sin nombre seguido de EXTERN\n");
+                    fprintf(
+                        out,
+                        "    # [WARN] DEFUNC sin nombre seguido de EXTERN\n");
                 }
 
                 // Avanzar n hasta el TAC_ENDFUNC para saltar el "cuerpo"
@@ -215,8 +225,9 @@ void generate_assembly(FILE *out) {
                     n = n->next;
                 }
                 // n apuntará al ENDFUNC; el loop principal hará n = n->next,
-                // así que dejamos que continúe desde allí (no emitimos prologo).
-                // Aseguramos limpiar estado relacionado con params/varmap
+                // así que dejamos que continúe desde allí (no emitimos
+                // prologo). Aseguramos limpiar estado relacionado con
+                // params/varmap
                 params_reset();
                 free_var_map();
                 in_function = 0;
@@ -232,9 +243,9 @@ void generate_assembly(FILE *out) {
                 func_param_index = 0;
             }
         } break;
-        
+
         case TAC_EXTERN: {
-        if (n->target && *n->target) {
+            if (n->target && *n->target) {
                 fprintf(out, "    .extern %s\n", n->target);
             }
         } break;
@@ -282,8 +293,8 @@ void generate_assembly(FILE *out) {
         case TAC_DIV: {
             load_i32_to_eax(out, n->arg1);
             load_i32_to_ecx(out, n->arg2);
-            fprintf(out, "    cltd\n");                
-            fprintf(out, "    idivl   %%ecx\n");       
+            fprintf(out, "    cltd\n");
+            fprintf(out, "    idivl   %%ecx\n");
             store_eax_to(out, n->target);
         } break;
 
@@ -366,19 +377,28 @@ void generate_assembly(FILE *out) {
                 // Estamos declarando parámetros de la función actual.
                 // n->arg1 contiene el nombre del parámetro.
                 const char *pname = n->arg1 ? n->arg1 : "(param)";
-                int off = ensure_offset(pname, out); // reserva espacio y devuelve offset
+                int off = ensure_offset(
+                    pname, out); // reserva espacio y devuelve offset
 
                 // Registros donde vienen los primeros 6 params:
-                static const char *in_regs[] = { "%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d" };
+                static const char *in_regs[] = {"%edi", "%esi", "%edx",
+                                                "%ecx", "%r8d", "%r9d"};
 
                 if (func_param_index < 6) {
-                    fprintf(out, "    movl    %s, -%d(%%rbp)\n", in_regs[func_param_index], off);
+                    fprintf(out, " movl %s, -%d(%%rbp)\n",
+                            in_regs[func_param_index], off);
                 } else {
-                    // Parámetros >6: el llamador los pone en la pila. No los manejamos aquí
-                    // (podrías leerlos desde 16(%rbp) + ((func_param_index-6)*8) si los caller
-                    //  arroja en la pila, dependiendo de alineación). Por ahora, emite un comentario.
-                    fprintf(out, "    # [WARN] parametro %s en stack (index %d) no soportado\n",
-                            pname, func_param_index);
+                    // Parámetros >6: el llamador los puso en la pila justo
+                    // antes del call. Los argumentos de pila comienzan en
+                    // 16(%rbp) en la convención SysV (después de saved rbp y
+                    // return address). El arg #6 (índice 6, séptimo arg) está
+                    // en 16(%rbp), arg #7 en 24(%rbp), etc.
+                    int stack_arg_index = func_param_index - 6;
+                    int caller_offset = 16 + (stack_arg_index * 8);
+                    // cargamos 8 bytes desde caller stack y almacenamos los 32
+                    // bits bajos en nuestro slot
+                    fprintf(out, " movq %d(%%rbp), %%rax\n", caller_offset);
+                    fprintf(out, " movl %%eax, -%d(%%rbp)\n", off);
                 }
                 func_param_index++;
             } else {
@@ -389,18 +409,29 @@ void generate_assembly(FILE *out) {
 
         case TAC_CALL: {
             int expected = 0;
-            if (n->arg2) expected = atoi(n->arg2);
-            (void)expected; 
+            if (n->arg2)
+                expected = atoi(n->arg2);
+            (void)expected;
 
             for (int i = 0; i < pending_count; ++i) {
                 move_arg_to_reg(out, i, pending_params[i]);
             }
 
-            fprintf(out, "    call    %s\n", n->arg1 ? n->arg1 : "unknown_func");
-
+            int pad = 0;
             if (pending_count > 6) {
                 int extra = (pending_count - 6) * 8;
-                fprintf(out, "    addq    $%d, %%rsp\n", extra);
+                int pushed = (pending_count - 6);
+                if (pushed % 2 != 0) {
+                    fprintf(out, " subq $8, %%rsp\n");
+                    pad = 8;
+                }
+                fprintf(out, " call %s\n", n->arg1 ? n->arg1 : "unknown_func");
+                if (pad) {
+                    fprintf(out, " addq $%d, %%rsp\n", pad);
+                }
+                fprintf(out, " addq $%d, %%rsp\n", extra);
+            } else {
+                fprintf(out, " call %s\n", n->arg1 ? n->arg1 : "unknown_func");
             }
 
             if (n->target && *n->target) {
