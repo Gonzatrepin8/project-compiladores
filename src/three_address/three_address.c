@@ -187,14 +187,15 @@ static char *gen_expr(AST *n, FILE *out) {
         char *res = new_temp();
         const char *op = n->info->op ? n->info->op : "(uop)";
 
-        if (strcmp(n->info->op, "-") == 0)
-            emit_tac(TAC_MINUS, operand, NULL, res);
-        else if (strcmp(n->info->op, "!") == 0)
+        if (strcmp(op, "-") == 0)
+            emit_tac(TAC_NEG, operand, NULL, res);
+        else if (strcmp(op, "!") == 0)
             emit_tac(TAC_NOT, operand, NULL, res);
 
         free(operand);
         return res;
     }
+
     case NODE_CALL: {
         AST *arg = n->left;
         int argnum = 0;
