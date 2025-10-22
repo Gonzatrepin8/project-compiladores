@@ -204,14 +204,11 @@ void generate_assembly(FILE *out) {
         }
         switch (n->op) {
         case TAC_DEFUNC: {
-            // Miramos hacia adelante para ver si esta función es "extern"
             TAC *p = n->next;
-            // saltamos PARAMs
             while (p && p->op == TAC_PARAM)
                 p = p->next;
 
             if (p && p->op == TAC_EXTERN) {
-                // Función declarada extern: emitimos solo .extern <name>
                 if (n->target && *n->target) {
                     fprintf(out, "    .extern %s\n", n->target);
                 } else {
@@ -220,21 +217,15 @@ void generate_assembly(FILE *out) {
                         "    # [WARN] DEFUNC sin nombre seguido de EXTERN\n");
                 }
 
-                // Avanzar n hasta el TAC_ENDFUNC para saltar el "cuerpo"
                 while (n && n->op != TAC_ENDFUNC) {
                     n = n->next;
                 }
-                // n apuntará al ENDFUNC; el loop principal hará n = n->next,
-                // así que dejamos que continúe desde allí (no emitimos
-                // prologo). Aseguramos limpiar estado relacionado con
-                // params/varmap
                 params_reset();
                 free_var_map();
                 in_function = 0;
                 in_func_param_phase = 0;
                 func_param_index = 0;
             } else {
-                // No es extern: generamos prologo normalmente
                 params_reset();
                 free_var_map();
                 asm_write_header(out, n->target);
@@ -374,13 +365,10 @@ void generate_assembly(FILE *out) {
 
         case TAC_PARAM: {
             if (in_function && in_func_param_phase) {
-                // Estamos declarando parámetros de la función actual.
-                // n->arg1 contiene el nombre del parámetro.
                 const char *pname = n->arg1 ? n->arg1 : "(param)";
                 int off = ensure_offset(
-                    pname, out); // reserva espacio y devuelve offset
+                    pname, out);
 
-                // Registros donde vienen los primeros 6 params:
                 static const char *in_regs[] = {"%edi", "%esi", "%edx",
                                                 "%ecx", "%r8d", "%r9d"};
 
@@ -388,21 +376,13 @@ void generate_assembly(FILE *out) {
                     fprintf(out, " movl %s, -%d(%%rbp)\n",
                             in_regs[func_param_index], off);
                 } else {
-                    // Parámetros >6: el llamador los puso en la pila justo
-                    // antes del call. Los argumentos de pila comienzan en
-                    // 16(%rbp) en la convención SysV (después de saved rbp y
-                    // return address). El arg #6 (índice 6, séptimo arg) está
-                    // en 16(%rbp), arg #7 en 24(%rbp), etc.
                     int stack_arg_index = func_param_index - 6;
                     int caller_offset = 16 + (stack_arg_index * 8);
-                    // cargamos 8 bytes desde caller stack y almacenamos los 32
-                    // bits bajos en nuestro slot
                     fprintf(out, " movq %d(%%rbp), %%rax\n", caller_offset);
                     fprintf(out, " movl %%eax, -%d(%%rbp)\n", off);
                 }
                 func_param_index++;
             } else {
-                // Es un TAC_PARAM para una llamada: push al arreglo pending.
                 params_push(n->arg1);
             }
         } break;
