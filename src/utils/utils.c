@@ -1,14 +1,15 @@
+#include "../ast/ast.h"
+#include "../symbol_table/symtab.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../ast/ast.h"
-#include "../symbol_table/symtab.h"
 
 void function_params(AST *node) {
-    if (!node || !node->left) return;
+    if (!node || !node->left)
+        return;
 
     Params *head = NULL;
-    Params *tail = NULL;      
+    Params *tail = NULL;
 
     for (AST *current = node->left; current != NULL; current = current->next) {
         Params *p = malloc(sizeof(Params));
@@ -36,14 +37,14 @@ void print_info(const Info *info) {
     }
 
     printf("Info {\n");
-    printf("  name       : %s\n",   info->name ? info->name : "(null)");
-    printf("  ival       : %d\n",   info->ival);
-    printf("  bval       : %d\n",   info->bval);
-    printf("  scope      : %d\n",   info->scope);
-    printf("  op         : %s\n",   info->op ? info->op : "(null)");
-    printf("  eval_type  : %s\n",   type_to_string(info->eval_type));
-    printf("  is_function: %d\n",   info->is_function);
-    
+    printf("  name       : %s\n", info->name ? info->name : "(null)");
+    printf("  ival       : %d\n", info->ival);
+    printf("  bval       : %d\n", info->bval);
+    printf("  scope      : %d\n", info->scope);
+    printf("  op         : %s\n", info->op ? info->op : "(null)");
+    printf("  eval_type  : %s\n", type_to_string(info->eval_type));
+    printf("  is_function: %d\n", info->is_function);
+
     printf("  params     : ");
     if (!info->params) {
         printf("(none)\n");
@@ -51,8 +52,7 @@ void print_info(const Info *info) {
         printf("\n");
         const Params *p = info->params;
         while (p) {
-            printf("    - %s : %s\n",
-                   p->param_name ? p->param_name : "(null)",
+            printf("    - %s : %s\n", p->param_name ? p->param_name : "(null)",
                    type_to_string(p->param_type));
             p = p->next;
         }

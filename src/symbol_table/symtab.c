@@ -1,7 +1,7 @@
+#include "symtab.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include "symtab.h"
 
 SymTab *symtab_new(void) {
     SymTab *st = calloc(1, sizeof(SymTab));
@@ -41,7 +41,8 @@ TypeInfo symtab_scope(SymTab *st, const char *name) {
 }
 
 void symtab_print(SymTab *st, FILE *stream) {
-    if (!stream) return;
+    if (!stream)
+        return;
 
     SymTab *stack[128];
     int n = 0;
@@ -75,7 +76,8 @@ void symtab_print(SymTab *st, FILE *stream) {
                         fprintf(stream, "%s:%s",
                                 p->param_name ? p->param_name : "(null)",
                                 type_to_string(p->param_type));
-                        if (p->next) fprintf(stream, ", ");
+                        if (p->next)
+                            fprintf(stream, ", ");
                     }
                 }
                 fprintf(stream, "\n");
@@ -85,15 +87,13 @@ void symtab_print(SymTab *st, FILE *stream) {
                 fprintf(stream, "  var(%s), Type: %s, value: %d\n",
                         s->info->name ? s->info->name : "(null)",
                         type_to_string(s->info->eval_type),
-                        (s->info->eval_type == TYPE_INT)
-                            ? s->info->ival
-                            : s->info->bval);
+                        (s->info->eval_type == TYPE_INT) ? s->info->ival
+                                                         : s->info->bval);
             }
         }
     }
     fprintf(stream, "====================\n");
 }
-
 
 int symtab_get_value(SymTab *st, const char *name, int *found) {
     for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
@@ -111,7 +111,6 @@ int symtab_get_value(SymTab *st, const char *name, int *found) {
     *found = 0;
     return 0;
 }
-
 
 void symtab_set_value(SymTab *st, const char *name, int value) {
     for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
@@ -132,13 +131,12 @@ void symtab_set_value(SymTab *st, const char *name, int value) {
 void symtab_print_scope(SymTab *st) {
     printf("Scope level %d:\n", st->level);
     for (Symbol *s = st->head; s != NULL; s = s->next) {
-        printf("  Name: %s, Type: %s\n",
-               s->info->name,
+        printf("  Name: %s, Type: %s\n", s->info->name,
                type_to_string(s->info->eval_type));
     }
 }
 
-void symtab_label_nodes(SymTab *st, const char *name, AST *node){
+void symtab_label_nodes(SymTab *st, const char *name, AST *node) {
     for (SymTab *scope = st; scope != NULL; scope = scope->parent) {
         for (Symbol *s = scope->head; s != NULL; s = s->next) {
             if (strcmp(s->info->name, name) == 0) {
