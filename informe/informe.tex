@@ -296,6 +296,58 @@ Cada nodo del AST almacena su tipo en \texttt{info->eval\_type}, lo que permite 
     \item Se podría optimizar separando el chequeo de expresiones y declaraciones en funciones independientes.
 \end{itemize}
 
+\section{Generación de Código Intermedio (TAC)}
+
+\subsection{Diseño y decisiones clave}
+Para la representación intermedia del código, se optó por utilizar Código de Tres Direcciones (TAC - Three Address Code), siguiendo las pautas del proyecto. Esta representación simplifica la traducción posterior a código ensamblador y facilita posibles optimizaciones.
+
+Se definió una estructura \texttt{TAC} para representar cada instrucción, conteniendo la operación (\texttt{op}), hasta dos argumentos (\texttt{arg1}, \texttt{arg2}) y un destino (\texttt{target}). Las instrucciones TAC se generan recorriendo el AST después del análisis semántico y el chequeo de tipos.
+
+\subsection{Estructura y almacenamiento}
+Inicialmente, la generación de TAC se implementó imprimiendo directamente las instrucciones a medida que se recorrían los nodos del AST. Sin embargo, al comenzar la implementación del generador de código ensamblador, nos dimos cuenta de que necesitábamos acceder a la secuencia completa de instrucciones TAC para realizar la traducción.
+
+Para solucionar esto, se modificó la implementación para almacenar las instrucciones TAC generadas en una lista enlazada. Se utilizan los punteros globales \texttt{tac\_head} y \texttt{tac\_tail} para manejar la lista. La función \texttt{emit\_tac} se encarga de crear un nuevo nodo \texttt{TAC} y agregarlo al final de esta lista.
+
+\subsection{Generación de TAC}
+La función principal \texttt{generate\_tac} inicializa los contadores de temporales y etiquetas y llama a \texttt{gen\_stmt} sobre la raíz del AST. Las funciones \texttt{gen\_stmt} y \texttt{gen\_expr} recorren recursivamente el árbol:
+\begin{itemize}
+    \item \texttt{gen\_expr}: Procesa nodos de expresiones (\texttt{INT}, \texttt{BOOL}, \texttt{ID}, \texttt{BINOP}, \texttt{UNOP}, \texttt{CALL}), genera el TAC correspondiente y devuelve el nombre del registro temporal o variable que contiene el resultado. Utiliza \texttt{new\_temp} para crear nombres únicos para resultados intermedios.
+    \item \texttt{gen\_stmt}: Procesa nodos de sentencias (\texttt{ASSIGN}, \texttt{IF}, \texttt{WHILE}, \texttt{RETURN}, \texttt{FUNCTION}, \texttt{BLOCK}, \texttt{CALL}, \texttt{PROG}), llamando a \texttt{gen\_expr} cuando es necesario y generando el TAC de control de flujo o asignación. Utiliza \texttt{new\_label} para crear etiquetas únicas para saltos.
+\end{itemize}
+Finalmente, \texttt{print\_tac\_list} recorre la lista enlazada y escribe las instrucciones TAC en el archivo de salida.
+
+\section{Generación de Código Ensamblador}
+
+\subsection{Diseño y decisiones clave}
+El objetivo de esta etapa es traducir la lista de instrucciones TAC (generada en la etapa anterior) a código ensamblador x86-64 para la plataforma Linux, utilizando la sintaxis de AT&T (aunque el código generado parece usar más la sintaxis Intel con `mov dst, src`)[cite: 802].
+
+La generación se realiza recorriendo la lista enlazada de instrucciones TAC (\texttt{tac\_head}) y traduciendo cada instrucción a una o más instrucciones ensamblador.
+
+\subsection{Manejo de Variables y Temporales}
+Se decidió mapear todas las variables locales y temporales del TAC a **ubicaciones en la pila** de la función actual. Se utiliza una lista enlazada (\texttt{VarMap}) gestionada por \texttt{var\_map\_head} para llevar un registro de qué variable corresponde a qué desplazamiento (\textit{offset}) relativo al puntero base (\texttt{rbp}).
+
+La función \texttt{ensure\_offset} busca una variable en el mapa; si no la encuentra, le asigna un nuevo offset negativo respecto a \texttt{rbp} (incrementando \texttt{current\_stack\_size}), reserva espacio en la pila (\texttt{sub rsp, 8}) y la agrega al mapa. Las funciones auxiliares \texttt{load\_i32\_to\_eax}, \texttt{load\_i32\_to\_ecx} y \texttt{store\_eax\_to} se usan para mover datos entre la pila y los registros \texttt{eax}/\texttt{ecx}.
+
+El mapa de variables y el tamaño de la pila se reinician al principio de cada función (\texttt{TAC\_DEFUNC}).
+
+\subsection{Traducción de Instrucciones TAC}
+\begin{itemize}
+    \item \textbf{Funciones:} \texttt{TAC\_DEFUNC} genera el prólogo (\texttt{push rbp}, \texttt{mov rbp, rsp}) y la etiqueta global. \texttt{TAC\_ENDFUNC} y \texttt{TAC\_RETURN} generan el epílogo (\texttt{mov rsp, rbp}, \texttt{pop rbp}, \texttt{ret}). El valor de retorno se deja en \texttt{eax}.
+    \item \textbf{Asignación y Aritmética:} Instrucciones como \texttt{TAC\_ASSIGN}, \texttt{TAC\_SUM}, \texttt{TAC\_MINUS}, \texttt{TAC\_MUL}, \texttt{TAC\_DIV}, \texttt{TAC\_MOD}, \texttt{TAC\_NEG} se traducen cargando operandos a \texttt{eax} y \texttt{ecx}, realizando la operación correspondiente (\texttt{mov}, \texttt{add}, \texttt{sub}, \texttt{imul}, \texttt{idiv}, \texttt{neg}) y guardando el resultado de \texttt{eax} en la pila. \texttt{idiv} requiere preparar \texttt{edx} con \texttt{cdq}.
+    \item \textbf{Comparaciones y Lógica:} \texttt{TAC\_LESS}, \texttt{TAC\_GREATER}, \texttt{TAC\_EQ} usan \texttt{cmp} seguido de instrucciones \texttt{set<cond>} (\texttt{setl}, \texttt{setg}, \texttt{sete}) y \texttt{movzx} para obtener un resultado booleano (0 o 1) en \texttt{eax}. \texttt{TAC\_AND}, \texttt{TAC\_OR}, \texttt{TAC\_NOT} usan comparaciones con 0 (\texttt{cmp}, \texttt{test}), \texttt{setne}, \texttt{sete} y operaciones lógicas (\texttt{and}, \texttt{or}).
+    \item \textbf{Control de Flujo:} \texttt{TAC\_LABEL} genera una etiqueta. \texttt{TAC\_GOTO} genera un \texttt{jmp}. \texttt{TAC\_IFZ} genera \texttt{test eax, eax} seguido de un salto condicional \texttt{je} (Jump if Equal/Zero).
+    \item \textbf{Llamadas a Función:} \texttt{TAC\_PARAM} acumula los argumentos en un array temporal \texttt{pending\_params}. \texttt{TAC\_CALL} itera sobre los parámetros acumulados y los mueve a los registros correctos según la convención de llamada x86-64 System V ABI (usando \texttt{edi}, \texttt{esi}, \texttt{edx}, etc., para los primeros argumentos enteros, y la pila para los restantes) mediante \texttt{move\_arg\_to\_reg}. Luego ejecuta la instrucción \texttt{call} y, si es necesario, limpia la pila de argumentos extra (\texttt{add rsp, ...}). El resultado de la llamada (en \texttt{eax}) se guarda si \texttt{target} no es nulo.
+\end{itemize}
+
+\subsection{Problemas Conocidos y Detalles de Implementación}
+\begin{itemize}
+    \item \textbf{Necesidad de Almacenar TAC:} Como se mencionó, fue necesario refactorizar la etapa de código intermedio para almacenar el TAC en una lista enlazada, en lugar de solo imprimirlo, para que el generador de ensamblador pudiera procesarlo.
+    \item \textbf{Mejorar estructura para almacenar variables:} Nos dimos cuenta que cuando guardabamos variables pisabamos el valor de la anterior, por lo que solo podíamos almacenar un valor a la vez. Para solcionarlo, agregamos una estructura llamada VarMap que lleva registro de todas las variables, con sus nombres y el offset, este es la distancia al base pointer en bytes, lo cual nos deja acceder a su dirección para poder utilizarla.
+    \item \textbf{Pasaje de parámetros incorrecto:} Descubrimos que estabamos leyendo mal los parámetros, por esa razón todas las funciones usaban el valor 0 por defecto. Por ejemplo, teniamos una test que calculaba el factorial de un número y este siempre devolvía 1, sea cual sea la entrada, debido a que el factorial de 0 es 1. 
+    Se nos ocurrió agregar variables globales para controlar, cuando estamos leyendo parámetros y cuantos vamos leyendo. Con estas variables, pudimos controlar correctamente y nos permitió leer correctamente los parámetros. Al solucionar esto surgio el problema de que solo podiamos almacenar en registro seis parámetros, si teniamos más se rompía. Esto fue causado porque usabamos unicamente los seis registros en lugar de pushear a la pila. Decidimos calcular dinamicamente el offset en base a la cantidad de parámetros para almacenar más que la cantidad de registros. Ahora funciona correctamente con cualquier cantidad.
+    \item \textbf{Gestión de Offsets en Pila:} La traducción de nombres de variables y temporales a offsets relativos a \texttt{rbp} es crucial. La función \texttt{ensure\_offset} maneja esto dinámicamente, pero requiere cuidado para asegurar que cada variable tenga un offset único dentro de su ámbito (actualmente, el ámbito de la función).
+    \item \textbf{Ineficiencias:} El código ensamblador generado realiza muchos accesos a memoria (pila) incluso para operaciones simples que podrían realizarse enteramente con registros, lo cual es ineficiente. Por ejemplo, cargar constantes a registros solo para guardarlas inmediatamente en la pila y luego volver a cargarlas.
+    \item \textbf{Convención de Llamada:} Implementar correctamente la convención de llamada (paso de argumentos en registros y pila, limpieza de pila) es complejo. Aunque se intenta seguir (usando \texttt{edi}, \texttt{esi}), requiere atención a los detalles, especialmente con más de 6 argumentos o tipos no enteros (no soportados por TDS25).
+\end{itemize}
+
 \end{document}
-
-

@@ -6,7 +6,8 @@
 
 static int tmp_counter = 0;
 static int label_counter = 0;
-static TAC *tac_head = NULL;
+
+TAC *tac_head = NULL;
 static TAC *tac_tail = NULL;
 
 static char *new_temp(void) {
@@ -110,7 +111,7 @@ static void print_tac_list(FILE *out, TAC *head) {
             fprintf(out, "end function\n");
             break;
         case TAC_EXTERN:
-            fprintf(out, "extern\n");
+            fprintf(out, "extern %s:\n", head->target);
             break;
         default:
             fprintf(out, "%s = ?(%d)\n", head->target ? head->target : "?", head->op);
@@ -186,14 +187,15 @@ static char *gen_expr(AST *n, FILE *out) {
         char *res = new_temp();
         const char *op = n->info->op ? n->info->op : "(uop)";
 
-        if (strcmp(n->info->op, "-") == 0)
-            emit_tac(TAC_MINUS, operand, NULL, res);
-        else if (strcmp(n->info->op, "!") == 0)
+        if (strcmp(op, "-") == 0)
+            emit_tac(TAC_NEG, operand, NULL, res);
+        else if (strcmp(op, "!") == 0)
             emit_tac(TAC_NOT, operand, NULL, res);
 
         free(operand);
         return res;
     }
+
     case NODE_CALL: {
         AST *arg = n->left;
         int argnum = 0;
@@ -205,8 +207,8 @@ static char *gen_expr(AST *n, FILE *out) {
             argnum++;
         }
         char *res = new_temp();
-        char num_params[10];
-        sprintf(num_params, "%d", argnum);
+        char num_params[16];
+        snprintf(num_params, sizeof(num_params), "%d", argnum);
         emit_tac(TAC_CALL, n->info->name, num_params, res);
         return res;
     }
@@ -276,26 +278,24 @@ static void gen_stmt(AST *n, FILE *out) {
 
       case NODE_FUNCTION: {
         const char *fname = n->info && n->info->name ? n->info->name : "(func)";
-        emit_tac(TAC_DEFUNC, NULL, NULL, fname);
-
-        if (n->left) {
-            AST *p = n->left;
-            int i = 0;
-            while (p) {
-                emit_tac(TAC_PARAM, p->info->name, NULL, NULL);
-                p = p->next;
+        if (n->right->type == NODE_EXTERN){
+            emit_tac(TAC_EXTERN, NULL, NULL, fname);
+        } else {
+        
+            emit_tac(TAC_DEFUNC, NULL, NULL, fname);
+        
+            if (n->left) {
+                AST *p = n->left;
+                int i = 0;
+                while (p) {
+                    emit_tac(TAC_PARAM, p->info->name, NULL, NULL);
+                    p = p->next;
+                }
             }
-        }
 
-        if (n->right) {
-            if (n->right->type == NODE_EXTERN) {
-                emit_tac(TAC_EXTERN, NULL, NULL, NULL);
-            } else {
-                gen_stmt(n->right, out);
-            }
+            if (n->right) gen_stmt(n->right, out);
+            emit_tac(TAC_ENDFUNC, NULL, NULL, NULL);
         }
-
-        emit_tac(TAC_ENDFUNC, NULL, NULL, NULL);
         break;
     }
 

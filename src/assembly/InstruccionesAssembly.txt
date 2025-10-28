@@ -1,0 +1,105 @@
+Directivas
+
+- .text
+Declara la sección de código (instrucciones).
+
+- .globl <sym>
+Marca un símbolo como global (visible al linker).
+
+.extern <sym>
+Declara una función/variable externa provista por otro objeto.
+
+
+Control de pila / prólogo / epílogo
+
+
+- pushq %rbp
+Guarda el frame base del llamador en la pila.
+
+- movq %rsp, %rbp
+Establece el nuevo frame base (prologo).
+
+- movq %rbp, %rsp
+Restaura %rsp desde %rbp (limpia variables locales).
+
+- popq %rbp
+Restaura el %rbp del llamador.
+
+- ret
+Vuelve al llamador (usa la dirección de retorno en pila).
+
+
+Movimiento de datos / direccionamiento
+
+
+- movl $imm, %reg
+Mueve un inmediato de 32 bits a un registro de 32 bits (ej. movl $42, %eax).
+
+- movl %reg, -<off>(%rbp) / movl -<off>(%rbp), %reg
+Lee/escribe una variable en memoria relativa a %rbp (offset negativo).
+
+- movq %reg, %reg2
+Mueve 64 bits (se usa en prologo/epilogo).
+
+- pushq %rax
+Empuja 8 bytes (registro de 64 bits) a la pila (usado para pasar argumentos extras).
+
+- addq $imm, %rsp
+Ajusta %rsp (por ejemplo para limpiar argumentos apilados).
+
+
+Aritmética entera (32-bit cuando aparece "l")
+
+- addl %ecx, %eax
+%eax = %eax + %ecx (suma 32-bit).
+
+- subl %ecx, %eax
+%eax = %eax - %ecx (resta 32-bit).
+
+- imull %ecx, %eax
+%eax = %eax * %ecx (multiplicación 32-bit).
+
+- idivl %ecx
+División con signo: divide el entero de 64-bit en EDX:EAX por %ecx; cociente → EAX, resto → EDX.
+
+- cltd / cltd (cltd o cdq/cltd)
+Sign-extend de EAX a EDX:EAX antes de idivl (prepara relación dividendo).
+
+
+Lógica y comparaciones
+
+- cmpl %ecx, %eax
+Compara %eax con %ecx (afecta flags: ZF, SF, CF, OF).
+
+- testl %eax, %eax
+Prueba %eax con sí mismo (marca ZF si es 0).
+
+- andl %ecx, %eax
+AND bit a bit entre %eax y %ecx.
+
+- orl %ecx, %eax
+OR bit a bit entre %eax y %ecx.
+
+
+Instrucciones de salto / control de flujo
+
+
+- jmp <label>
+Salto incondicional a etiqueta.
+
+- je <label> / jz <label>
+Salta si ZF=1 (igual / zero).
+
+- j<cond> <label> (ej. jl, jg, jne, jle, jge)
+Saltos condicionales basados en flags (menor, mayor, distinto, etc.).
+
+- call <func>
+Llama a función: empuja return address y salta a func.
+
+
+Instrucciones para convertir resultado de comparación a 0/1
+
+- setl/setg/sete/setne/... %al
+Escribe 0/1 en el byte %al según la condición (ej. sete pone 1 si igual).
+- movzbl %al, %eax
+Extiende con cero el byte %al a 32 bits en %eax (convierte la 0/1 a registro entero).
