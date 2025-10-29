@@ -13,9 +13,19 @@ program {
 
     void main() {
         integer num = 3;
-        integer result = 10;
-        
-        num = 5;
+        integer result = 10; 
+        num = 1 + 1 + 1 + 1 + 1 + 1 + 1 + 2 * 2;
         result = factorial(num);
+        if(true) then {
+            result = 4 + 4 + 4+ 4+ 4+ 4+ 4+ 4+ 4;
+            return;
+            result = 4 + 4 + 4+ 4+ 4+ 4+ 4+ 4+ 4;
+        }
+        return;
+        result = 1;
+        result = 2;
+        result = 3;
+        result = 4;
+        return;
     }
 }

@@ -177,6 +177,7 @@ int main(int argc, char **argv) {
                 //printf("ARBOL SIN OPTIMIZAR \n\n\n");
                 print_ast(root, 0, 1);
                 const_prop(root);
+                dead_code(root);
                 //printf("ARBOL OPTIMIZADO \n\n\n");
                 print_ast(root, 0, 1);
                 if (type_check_error) {

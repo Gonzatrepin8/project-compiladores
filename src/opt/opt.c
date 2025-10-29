@@ -1,8 +1,25 @@
-#include "const_prop.h"
+#include "opt.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+void dead_code(AST *n){
+    if(!n) return;
+
+    switch(n->type){
+        case NODE_RETURN:
+            if(n->next){ 
+                free(n->next);
+                n->next = NULL;
+            }
+        default:
+            if(n->right) dead_code(n->right);
+            if(n->next) dead_code(n->next);
+            if(n->left) dead_code(n->left);
+    }
+
+}
 
 void const_prop(AST *n) {
     if (!n) return;
