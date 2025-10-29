@@ -9,6 +9,7 @@
 #include "type_check/type_check.h"
 #include "three_address/three_address.h"
 #include "assembly/assembly_gen.h"
+#include "opt/const_prop.h" 
 
 extern int yylex(void);
 extern void yyerror(const char *s);
@@ -173,6 +174,10 @@ int main(int argc, char **argv) {
 
                 symtab_print(global, symout);
                 check_types(root);
+                //printf("ARBOL SIN OPTIMIZAR \n\n\n");
+                print_ast(root, 0, 1);
+                const_prop(root);
+                //printf("ARBOL OPTIMIZADO \n\n\n");
                 print_ast(root, 0, 1);
                 if (type_check_error) {
                     fprintf(stderr, "Type check error.\n");
