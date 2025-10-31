@@ -9,7 +9,7 @@
 #include "type_check/type_check.h"
 #include "three_address/three_address.h"
 #include "assembly/assembly_gen.h"
-#include "opt/const_prop.h" 
+#include "opt/opt.h" 
 
 extern int yylex(void);
 extern void yyerror(const char *s);
