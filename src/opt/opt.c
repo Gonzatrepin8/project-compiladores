@@ -4,21 +4,61 @@
 #include <string.h>
 #include <stdlib.h>
 
-void dead_code(AST *n){
-    if(!n) return;
+void dead_code(AST *n) {
+    if (!n) return;
 
-    switch(n->type){
-        case NODE_RETURN:
-            if(n->next){ 
-                free(n->next);
-                n->next = NULL;
+    if (n->left)  dead_code(n->left);
+    if (n->right) dead_code(n->right);
+    if (n->next)  dead_code(n->next);
+
+    if (n->type == NODE_IF && n->left && n->left->type == NODE_BOOL) {
+        int cond = n->left->info->bval;
+        AST *keep = NULL;
+
+        if (cond) {
+            keep = n->right;
+        } else {
+            if (n->right && n->right->next)
+                keep = n->right->next;
+        }
+
+        free(n->left);
+        n->left = NULL;
+
+        if (keep) {
+            AST *next_backup = n->next;
+            *n = *keep;
+            n->next = next_backup;
+        } else {
+            n->type = NODE_BLOCK;
+            n->left = n->right = NULL;
+            if (n->info) {
+                free(n->info->name);
+                free(n->info->op);
+                free(n->info);
             }
-        default:
-            if(n->right) dead_code(n->right);
-            if(n->next) dead_code(n->next);
-            if(n->left) dead_code(n->left);
+            n->info = calloc(1, sizeof(Info));
+        }
     }
 
+    else if (n->type == NODE_WHILE && n->left && n->left->type == NODE_BOOL) {
+        int cond = n->left->info->bval;
+        if (!cond) {
+            free(n->left);
+            n->left = n->right = NULL;
+            n->type = NODE_BLOCK;
+            if (n->info) {
+                free(n->info->name);
+                free(n->info->op);
+                free(n->info);
+            }
+            n->info = calloc(1, sizeof(Info));
+        }
+    }
+
+    if (n->type == NODE_RETURN && n->next) {
+        n->next = NULL;
+    }
 }
 
 void const_prop(AST *n) {
