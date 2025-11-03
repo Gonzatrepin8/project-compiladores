@@ -350,4 +350,57 @@ El mapa de variables y el tamaño de la pila se reinician al principio de cada f
     \item \textbf{Convención de Llamada:} Implementar correctamente la convención de llamada (paso de argumentos en registros y pila, limpieza de pila) es complejo. Aunque se intenta seguir (usando \texttt{edi}, \texttt{esi}), requiere atención a los detalles, especialmente con más de 6 argumentos o tipos no enteros (no soportados por TDS25).
 \end{itemize}
 
+\section{Optimización}
+
+\subsection{Objetivo}
+En esta etapa se buscó mejorar la eficiencia del código generado reduciendo operaciones innecesarias y eliminando fragmentos que nunca se ejecutan. Para ello, implementamos una fase de \textbf{optimización sobre el Árbol de Sintaxis Abstracta (AST)} antes de la generación del código intermedio.
+
+\subsection{Diseño y decisiones clave}
+La optimización se centra en dos técnicas principales: \textbf{propagación de constantes} y \textbf{eliminación de código muerto (dead code elimination)}. Ambas se implementaron directamente sobre el AST, antes de generar el Código de Tres Direcciones (TAC).
+
+\begin{itemize}
+    \item \textbf{Propagación de constantes:}  
+    Si una expresión puede evaluarse en tiempo de compilación (por ejemplo, \texttt{3 + 4}, \texttt{true \&\& false}), el nodo se reemplaza por un nuevo nodo literal con el valor resultante. Esto reduce el tamaño del AST y evita generar instrucciones TAC innecesarias.
+    
+    \item \textbf{Eliminación de código muerto:}  
+    Se recorren los nodos del AST con una función recursiva llamada \texttt{dead\_code}, que identifica y elimina subárboles que nunca serán ejecutados.  
+    Ejemplos típicos:
+    \begin{itemize}
+        \item Todo el código que sigue a un \texttt{return} dentro de una función se elimina, ya que es inalcanzable.
+        \item En estructuras \texttt{if-else}, si la condición es una constante, se conserva únicamente la rama correspondiente.
+        \item En bucles \texttt{while} con condición constante falsa, se elimina completamente el cuerpo del bucle.
+    \end{itemize}
+    
+    \item \textbf{Estrategia incremental:}  
+    La optimización se aplica de manera recursiva, revisando cada nodo y realizando simplificaciones en profundidad. Cada vez que un nodo se modifica, el recorrido vuelve sobre sus hijos para detectar posibles nuevas oportunidades de optimización.
+\end{itemize}
+
+\subsection{Detalles de implementación interesantes}
+\begin{itemize}
+    \item La función \texttt{dead\_code(AST *n)} recorre el árbol en profundidad (\textit{depth-first}) y modifica los punteros de los nodos en tiempo real.  
+    Si detecta un nodo \texttt{NODE\_RETURN}, elimina todo lo que sigue en la secuencia de sentencias (\texttt{n->next}).
+    \item En nodos \texttt{NODE\_IF} y \texttt{NODE\_WHILE}, cuando la condición es constante, se decide si conservar o eliminar ramas completas, evitando recorrer innecesariamente partes del árbol.
+    \item Durante la propagación de constantes, los nodos de operaciones binarias (\texttt{NODE\_BINOP}) o unarias (\texttt{NODE\_UNOP}) se reemplazan por literales evaluados. Por ejemplo, una expresión \texttt{3 * 2} se convierte directamente en un nodo \texttt{INT(6)}.
+    \item Para evitar pérdida de memoria, se liberan los nodos sustituidos mediante \texttt{free()} y se reasignan punteros al nuevo nodo simplificado.
+\end{itemize}
+
+\subsection{Problemas encontrados}
+Durante las primeras pruebas, al optimizar de forma recursiva los nodos, se presentaron \textbf{violaciones de segmento (segmentation faults)}.  
+Esto ocurría principalmente porque, al eliminar un nodo, se accedía a memoria liberada desde su nodo padre o desde un hermano (\texttt{n->next}).  
+El problema se resolvió controlando cuidadosamente los punteros antes y después de liberar memoria, y reasignando correctamente el flujo del recorrido.
+
+También surgió un problema al intentar ejecutar varios \texttt{scanf} secuenciales en el código generado. Al analizarlo, descubrimos que el offset se calcula de una manera distinta que el que se necesita para scanf. Estamos en proceso de solucionarlo.
+
+\subsection{Resultados y mejoras observadas}
+\begin{itemize}
+    \item Se redujo significativamente la cantidad de instrucciones TAC generadas, especialmente en bloques con constantes o ramas condicionales simples.
+    \item El código ensamblador final es más corto y limpio, sin secciones redundantes ni saltos innecesarios.
+    \item El análisis de flujo y eliminación de código muerto permitió detectar errores lógicos en el propio lenguaje de entrada (por ejemplo, condiciones inalcanzables o retornos prematuros).
+\end{itemize}
+
+\subsection{Limitaciones y posibles mejoras}
+\begin{itemize}
+    \item Actualmente la optimización se aplica solo sobre el AST. En el futuro, podría extenderse al nivel TAC para detectar redundancias entre instrucciones.
+\end{itemize}
+
 \end{document}
