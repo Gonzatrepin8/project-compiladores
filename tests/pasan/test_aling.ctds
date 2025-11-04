@@ -1,0 +1,13 @@
+program
+{
+    void print_int(integer x) extern;
+    integer get_int() extern;
+    
+    void main(){
+        integer a = 0;
+        integer b = 0;
+        a = get_int();
+        b = get_int();
+        print_int(a + b);
+    }
+}

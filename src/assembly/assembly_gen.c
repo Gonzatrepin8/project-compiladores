@@ -393,25 +393,27 @@ void generate_assembly(FILE *out) {
                 expected = atoi(n->arg2);
             (void)expected;
 
+            int pushes = 0;
+            if (pending_count > 6) pushes = pending_count - 6;
+            int push_bytes = pushes * 8;
+
+            int pad = 0;
+            if (((current_stack_size + push_bytes) % 16) != 0) {
+                pad = 8;
+                fprintf(out, "    subq    $8, %%rsp\n");
+            }
+
             for (int i = 0; i < pending_count; ++i) {
                 move_arg_to_reg(out, i, pending_params[i]);
             }
 
-            int pad = 0;
-            if (pending_count > 6) {
-                int extra = (pending_count - 6) * 8;
-                int pushed = (pending_count - 6);
-                if (pushed % 2 != 0) {
-                    fprintf(out, " subq $8, %%rsp\n");
-                    pad = 8;
-                }
-                fprintf(out, " call %s\n", n->arg1 ? n->arg1 : "unknown_func");
-                if (pad) {
-                    fprintf(out, " addq $%d, %%rsp\n", pad);
-                }
-                fprintf(out, " addq $%d, %%rsp\n", extra);
-            } else {
-                fprintf(out, " call %s\n", n->arg1 ? n->arg1 : "unknown_func");
+            fprintf(out, "    call    %s\n", n->arg1 ? n->arg1 : "unknown_func");
+
+            if (push_bytes > 0) {
+                fprintf(out, "    addq    $%d, %%rsp\n", push_bytes);
+            }
+            if (pad) {
+                fprintf(out, "    addq    $%d, %%rsp\n", pad);
             }
 
             if (n->target && *n->target) {
