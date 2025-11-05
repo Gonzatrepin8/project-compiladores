@@ -19,12 +19,10 @@ typedef enum {
     BINOP_AND
 } binops;
 
-typedef enum {
-    OPT_DEAD_CODE,
-    OPT_CONSTANT_FOLDING,
-    OPT_SHORT_CIRCUIT_EVALUATION,
-    OPT_PEEPHOLE
-} opt_flags;
+bool OPT_DEAD_CODE = false;
+bool OPT_CONSTANT_FOLDING = false;
+bool OPT_SHORT_CIRCUIT_EVALUATION = false;
+bool OPT_PEEPHOLE = false;
 
 void dead_code(AST *n);
 void const_prop(AST *n);
