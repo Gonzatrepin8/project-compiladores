@@ -356,7 +356,7 @@ El mapa de variables y el tamaño de la pila se reinician al principio de cada f
 En esta etapa se buscó mejorar la eficiencia del código generado reduciendo operaciones innecesarias y eliminando fragmentos que nunca se ejecutan. Para ello, implementamos una fase de \textbf{optimización sobre el Árbol de Sintaxis Abstracta (AST)} antes de la generación del código intermedio.
 
 \subsection{Diseño y decisiones clave}
-La optimización se centra en dos técnicas principales: \textbf{propagación de constantes} y \textbf{eliminación de código muerto (dead code elimination)}. Ambas se implementaron directamente sobre el AST, antes de generar el Código de Tres Direcciones (TAC).
+La optimización se centra en dos técnicas principales: \textbf{propagación de constantes} y \textbf{eliminación de código muerto (dead code elimination)}. Ambas se implementaron directamente sobre el AST, antes de generar el Código de Tres Direcciones (TAC). Además agregamos otras técnicas de optimización como \textbf{evaluación cortocircuito} y \textbf{Peephole}.
 
 \begin{itemize}
     \item \textbf{Propagación de constantes:}  
@@ -373,6 +373,12 @@ La optimización se centra en dos técnicas principales: \textbf{propagación de
     
     \item \textbf{Estrategia incremental:}  
     La optimización se aplica de manera recursiva, revisando cada nodo y realizando simplificaciones en profundidad. Cada vez que un nodo se modifica, el recorrido vuelve sobre sus hijos para detectar posibles nuevas oportunidades de optimización.
+
+    \item \textbf{Evaluación por cortocircuito:}
+    Se aplica en las operaciones lógicas durante la propagación de constantes, con el objetivo de evitar evaluaciones innecesarias. Esta técnica determina cuándo el resultado de una expresión puede conocerse únicamente a partir del primer operando, sin necesidad de evaluar el segundo. Por ejemplo, en una operación OR, si el primer operando es \texttt{true}, el resultado será \texttt{true} sin evaluar el siguiente; mientras que en una operación AND, si el primer operando es \texttt{false}, el resultado será \texttt{false} automáticamente.
+    
+    \item \textbf{Optimización Peephole:}
+    En las operaciones binarias aritméticas se aplican reglas algebraicas básicas para eliminar cálculos redundantes y simplificar expresiones. Esta técnica, conocida como \emph{peephole optimization}, examina pequeñas secuencias de instrucciones (una “ventana” o \emph{peephole}) para detectar patrones que puedan ser reemplazados por versiones más eficientes. Por ejemplo, expresiones como \texttt{x + 0} o \texttt{x * 1} se simplifican directamente a \texttt{x}, evitando operaciones innecesarias.
 \end{itemize}
 
 \subsection{Detalles de implementación interesantes}
@@ -389,7 +395,7 @@ Durante las primeras pruebas, al optimizar de forma recursiva los nodos, se pres
 Esto ocurría principalmente porque, al eliminar un nodo, se accedía a memoria liberada desde su nodo padre o desde un hermano (\texttt{n->next}).  
 El problema se resolvió controlando cuidadosamente los punteros antes y después de liberar memoria, y reasignando correctamente el flujo del recorrido.
 
-También surgió un problema al intentar ejecutar varios \texttt{scanf} secuenciales en el código generado. Al analizarlo, descubrimos que el offset se calcula de una manera distinta que el que se necesita para scanf. Estamos en proceso de solucionarlo.
+También surgió un problema al intentar ejecutar varios \texttt{scanf} secuenciales en el código generado. Al analizarlo, descubrimos que el offset se calcula de una manera distinta que el que se necesita para scanf. Para solucionarlo se agrego una condición para detectar cuando el offset se encuentra desalineado y asi cambia el tamaño del stack para evitar estos errores.
 
 \subsection{Resultados y mejoras observadas}
 \begin{itemize}
