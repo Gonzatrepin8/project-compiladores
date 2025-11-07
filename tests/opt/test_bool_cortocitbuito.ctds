@@ -1,0 +1,15 @@
+program {
+    void main(){
+        integer b = 10 + 10 + 10;
+        integer a = 7;
+        bool z = true && false;
+        integer c = 3 * 1 * 8 * 0;
+        integer d = a + b;
+        integer e = d + c;
+        bool f = true || z;
+        bool g = true && z;
+        if (4 > 8) then {
+            integer a = 2;
+        }
+    }
+}

@@ -63,7 +63,7 @@ void print_optimization_help() {
     printf("    -peephole:                  performs peephole optimizations (simple optimizations).\n");
     printf("\n");
 }
-
+/*
 bool set_optimization_flag(const char *opt) {
     if (strcmp(opt, "-dead_code") == 0) {
         opt_dead_code_enabled = true;
@@ -110,7 +110,7 @@ int handle_optimizations(int argi, int argc, char **argv) {
 
     return idx;
 }
-
+*/
 int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "Usage: %s [-debug] [-target scan|parse|codinter|assembly] [-opt] <sourcefile>\n", argv[0]);
@@ -142,10 +142,10 @@ int main(int argc, char **argv) {
             }
             argi += 2;
         } else if (strcmp(argv[argi], "-opt") == 0) {
-            argi = handle_optimizations(argi, argc, argv);
+            //argi = handle_optimizations(argi, argc, argv);
             continue;
-        } else if (set_optimization_flag(argv[argi])) {
-            argi++;
+        //} else if (set_optimization_flag(argv[argi])) {
+        //    argi++;
         } else {
             fprintf(stderr, "Unknown option: %s\n", argv[argi]);
             return 1;
@@ -248,14 +248,12 @@ int main(int argc, char **argv) {
                 check_types(root);
                 //printf("ARBOL SIN OPTIMIZAR \n\n\n");
                 print_ast(root, 0, 1);
-                if (opt_constant_folding_enabled) {
                     const_prop(root);
-                }
-                if (opt_dead_code_enabled) {
                     dead_code(root);
-                }
-                //printf("ARBOL OPTIMIZADO \n\n\n");
-                print_ast(root, 0, 1);
+                    //printf("ARBOL OPTIMIZADO \n\n\n");
+                    print_ast(root, 0, 1);
+                    optimize_bool_operators(root);
+                    print_ast(root, 0, 1);
                 if (type_check_error) {
                     fprintf(stderr, "Type check error.\n");
                     return 1;

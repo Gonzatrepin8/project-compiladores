@@ -3,12 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
-bool opt_dead_code_enabled = false;
-bool opt_constant_folding_enabled = false;
-bool opt_short_circuit_enabled = false;
-bool opt_peephole_enabled = false;
-
+#include "../utils/utils.h"
+/*
+bool OPT_DEAD_CODE = true;
+bool OPT_CONSTANT_FOLDING = false;
+bool OPT_SHORT_CIRCUIT_EVALUATION = false;
+bool OPT_PEEPHOLE = false;
+*/
 void dead_code(AST *n) {
     if (!n) return;
 
@@ -91,35 +92,6 @@ void const_prop(AST *n) {
                 n->info->bval = (lf == rg);
                 n->type = NODE_BOOL;
             }
-            
-            if (opt_peephole_enabled) {
-                if (strcmp(n->info->op, "+") == 0) {
-                    n->info->ival = optimize_int_operators(lf, rg, BINOP_SUM);
-                    n->type = NODE_INT;
-                }
-                else if (strcmp(n->info->op, "-") == 0) {
-                    n->info->ival = optimize_int_operators(lf, rg, BINOP_SUB);
-                    n->type = NODE_INT;
-                }
-                else if (strcmp(n->info->op, "*") == 0) {
-                    n->info->ival = optimize_int_operators(lf, rg, BINOP_MULT);
-                    n->type = NODE_INT;
-                }
-                else if (strcmp(n->info->op, "/") == 0) {
-                    if (rg != 0) {
-                        n->info->ival = optimize_int_operators(lf, rg, BINOP_DIV);
-                        n->type = NODE_INT;
-                    } else {
-                        fprintf(stderr, "Error: division por cero inválida.\n");
-                    }
-                }
-                else if (strcmp(n->info->op, "%") == 0) {
-                    if (rg != 0) {
-                        n->info->ival = optimize_int_operators(lf, rg, BINOP_MOD);
-                        n->type = NODE_INT;
-                    }
-                }
-            } else {
                 if (strcmp(n->info->op, "+") == 0) {
                     n->info->ival = lf + rg;
                     n->type = NODE_INT;
@@ -146,7 +118,7 @@ void const_prop(AST *n) {
                         n->type = NODE_INT;
                     }
                 }
-            }
+            
             
             free(n->left);
             free(n->right);
@@ -156,17 +128,6 @@ void const_prop(AST *n) {
         else if (n->left->type == NODE_BOOL && n->right->type == NODE_BOOL) {
             int lf = n->left->info->bval;
             int rg = n->right->info->bval;
-
-            if (opt_short_circuit_enabled) {
-                if (strcmp(n->info->op, "&&") == 0) {
-                    n->info->bval = optimize_bool_operators(lf, rg, BINOP_AND);
-                    n->type = NODE_BOOL;
-                }
-                else if (strcmp(n->info->op, "||") == 0) {
-                    n->info->bval = optimize_bool_operators(lf, rg, BINOP_OR);
-                    n->type = NODE_BOOL;
-                }
-            } else {
                 if (strcmp(n->info->op, "&&") == 0) {
                     n->info->bval = lf && rg;
                     n->type = NODE_BOOL;
@@ -175,7 +136,7 @@ void const_prop(AST *n) {
                     n->info->bval = lf || rg;
                     n->type = NODE_BOOL;
                 }
-            }
+            
 
             free(n->left);
             free(n->right);
@@ -208,90 +169,94 @@ void const_prop(AST *n) {
     }
 }
 
-int optimize_int_operators(int a, int b, binops op) {
-    switch (op)
-    {
-    case BINOP_SUM:
-        if (a == 0) {
-            return b;
-        } else if (b == 0) {
-            return a;
-        } else {
-            return a+b;
+void optimize_bool_operators(AST *n) {
+    if (!n) return;
+
+    switch (n->type) {
+
+    case NODE_BINOP:
+        optimize_bool_operators(n->left);
+        optimize_bool_operators(n->right);
+        //print_info(n->info);
+
+        if (n->left->type == NODE_BOOL){
+            int lf = n->left->info->bval;
+            if (strcmp(n->info->op, "&&") == 0){
+                if (lf == 1){
+                    AST *next_backup = n->next;
+                    *n = *n->right;
+                    n->next = next_backup;
+                    break;
+                } else {
+                    n->type = TYPE_BOOL;
+                    n->info->bval = 0;
+                    n->left = NULL;
+                    n->right = NULL;
+
+                    break;
+                }
+            } else if (strcmp(n->info->op, "||") == 0){
+                if (lf == 0){
+                    printf("hola");
+                    AST *next_backup = n->next;
+                    *n = *n->right;
+                    n->next = next_backup;
+                    break;
+                } else {
+                    printf("hola");
+                    n->type = TYPE_BOOL;
+                    n->info->bval = 1;
+                    n->left = NULL;
+                    n->right = NULL;
+
+                    break;
+                }
+            }
+
+        } else if(n->right->type == NODE_BOOL) {
+            int rg = n->right->info->bval;
+            if (strcmp(n->info->op, "&&")){
+                if (rg == 1){
+                    printf("hola");
+                    AST *next_backup = n->next;
+                    *n = *n->left;
+                    n->next = next_backup;
+                    break;
+                } else {
+                    printf("hola");
+                    n->type = TYPE_BOOL;
+                    n->info->bval = 0;
+                    n->left = NULL;
+                    n->right = NULL;
+
+                    break;
+                }
+            } else if (strcmp(n->info->op, "||")){
+                if (rg == 0){
+                    printf("hola");
+                    AST *next_backup = n->next;
+                    *n = *n->left;
+                    n->next = next_backup;
+                    break;
+                } else {
+                    printf("hola");
+                    n->type = TYPE_BOOL;
+                    n->info->bval = 1;
+                    n->left = NULL;
+                    n->right = NULL;
+
+                    break;
+                }
+            }
+
         }
-        break;
-    case BINOP_SUB:
-        if (a == b) {
-            return 0;
-        } else if (b == 0) {
-        return a;
-        } else if (a == 0) {
-            return -b;
-        } else {
-            return a-b;
-        }
-        break;
-    case BINOP_DIV:
-        if (b == 1) {
-            return a;
-        } else if (b == -1) {
-            return -a;
-        } else if (a == b) {
-            return 1;
-        } else if (b > a) {
-            return 0;
-        } else if (a == 0){
-            return 0;
-        } else {
-            return a/b;
-        }
-        break;
-    case BINOP_MULT:
-        if (a == 1) {
-            return b;
-        } else if (b == 1) {
-            return a;
-        } else if (a == -1) {
-            return -b;
-        } else if (b == -1) {
-            return -a;
-        } else if (a == 0 || b == 0) {
-            return 0;
-        } else {
-            return a*b;
-        }
-        break;
-    case BINOP_MOD:
-        if (abs(a) == abs(b) || abs(b) == 1 || a == 0) {
-            return 0;
-        } else {
-            return a%b;
-        }
+
         break;
     default:
+        if (n->left) optimize_bool_operators(n->left);
+        if (n->right) optimize_bool_operators(n->right);
+        if (n->next) optimize_bool_operators(n->next);
         break;
     }
 }
 
-bool optimize_bool_operators(int a, int b, binops op) {
-    switch (op)
-    {
-    case BINOP_OR:
-        if (a == 1) {
-            return true;
-        } else {
-            return b;
-        }
-        break;
-
-    case BINOP_AND:
-        if (a == 0) {
-            return false;
-        } else {
-            return b;
-        }
-    
-    default:
-        break;
-    }
-}
