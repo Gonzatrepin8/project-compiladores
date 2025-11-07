@@ -239,19 +239,21 @@ void const_prop(AST *n) {
         break;
 
     case NODE_UNOP:
+        if (!n->left) break;
         const_prop(n->left);
 
         if (strcmp(n->info->op, "-") == 0 && n->left->type == NODE_INT) {
             n->info->ival = -n->left->info->ival;
+            free(n->left);
+            n->left = NULL;
             n->type = NODE_INT;
         }
         else if (strcmp(n->info->op, "!") == 0 && n->left->type == NODE_BOOL) {
             n->info->bval = !n->left->info->bval;
+            free(n->left);
+            n->left = NULL;
             n->type = NODE_BOOL;
         }
-
-        free(n->left);
-        n->left = NULL;
         break;
 
     default:
@@ -259,6 +261,7 @@ void const_prop(AST *n) {
         if (n->right) const_prop(n->right);
         if (n->next) const_prop(n->next);
         break;
+
     }
 }
 
