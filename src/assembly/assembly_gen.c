@@ -1,5 +1,6 @@
 #include "assembly_gen.h"
 #include "../three_address/three_address.h"
+#include "platform.h"
 
 #include <ctype.h>
 #include <stdint.h>
@@ -93,11 +94,12 @@ void asm_write_header(FILE *out, const char *func_name) {
     if (!func_name)
         func_name = "func";
     if (strcmp(func_name, "main") == 0) {
-        fprintf(out, "    .globl  main\n");
-        fprintf(out, "main:\n");
+        fprintf(out, "    .globl  %s\n", platform_symbol(func_name));
+        fprintf(out, "%s:\n", platform_symbol(func_name));
     } else {
-        fprintf(out, "    .globl  %s\n", func_name);
-        fprintf(out, "%s:\n", func_name);
+        fprintf(out, "    .globl  %s\n", platform_symbol(func_name));
+        fprintf(out, "%s:\n", platform_symbol(func_name));
+
     }
     fprintf(out, "    pushq   %%rbp\n");
     fprintf(out, "    movq    %%rsp, %%rbp\n");
@@ -210,7 +212,7 @@ void generate_assembly(FILE *out) {
 
             if (p && p->op == TAC_EXTERN) {
                 if (n->target && *n->target) {
-                    fprintf(out, "    .extern %s\n", n->target);
+                    fprintf(out, "    .extern %s\n", platform_symbol(n->target));
                 } else {
                     fprintf(
                         out,
@@ -407,7 +409,7 @@ void generate_assembly(FILE *out) {
                 move_arg_to_reg(out, i, pending_params[i]);
             }
 
-            fprintf(out, "    call    %s\n", n->arg1 ? n->arg1 : "unknown_func");
+            fprintf(out, "    call    %s\n", platform_symbol(n->arg1 ? n->arg1 : "unknown_func"));
 
             if (push_bytes > 0) {
                 fprintf(out, "    addq    $%d, %%rsp\n", push_bytes);
