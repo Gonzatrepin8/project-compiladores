@@ -182,6 +182,60 @@ void const_prop(AST *n) {
             n->left = n->right = NULL;
         }
 
+        if (opt_short_circuit_enabled && n->type == NODE_BINOP) {
+            if (strcmp(n->info->op, "||") == 0) {
+                if (n->left && n->left->type == NODE_BOOL) {
+                    if (n->left->info->bval == 1) {
+                        n->type = NODE_BOOL;
+                        n->info->bval = 1;
+                        free(n->left);
+                        free(n->right);
+                        n->left = n->right = NULL;
+                    } else if (n->left->info->bval == 0 && n->right) {
+                        AST *keep = n->right;
+                        *n = *keep;
+                    }
+                } else if (n->right && n->right->type == NODE_BOOL) {
+                    if (n->right->info->bval == 1) {
+                        n->type = NODE_BOOL;
+                        n->info->bval = 1;
+                        free(n->left);
+                        free(n->right);
+                        n->left = n->right = NULL;
+                    } else if (n->right->info->bval == 0 && n->left) {
+                        AST *keep = n->left;
+                        *n = *keep;
+                    }
+                }
+            }
+            else if (strcmp(n->info->op, "&&") == 0) {
+                if (n->left && n->left->type == NODE_BOOL) {
+                    if (n->left->info->bval == 0) {
+                        n->type = NODE_BOOL;
+                        n->info->bval = 0;
+                        free(n->left);
+                        free(n->right);
+                        n->left = n->right = NULL;
+                    } else if (n->left->info->bval == 1 && n->right) {
+                        AST *keep = n->right;
+                        *n = *keep;
+                    }
+                } else if (n->right && n->right->type == NODE_BOOL) {
+                    if (n->right->info->bval == 0) {
+                        n->type = NODE_BOOL;
+                        n->info->bval = 0;
+                        free(n->left);
+                        free(n->right);
+                        n->left = n->right = NULL;
+                    } else if (n->right->info->bval == 1 && n->left) {
+                        AST *keep = n->left;
+                        *n = *keep;
+                    }
+                }
+            }
+        }
+
+
         break;
 
     case NODE_UNOP:
@@ -274,24 +328,18 @@ int optimize_int_operators(int a, int b, binops op) {
 }
 
 bool optimize_bool_operators(int a, int b, binops op) {
-    switch (op)
-    {
+    switch (op) {
     case BINOP_OR:
-        if (a == 1) {
+        if (a)
             return true;
-        } else {
-            return b;
-        }
-        break;
+        return b;
 
     case BINOP_AND:
-        if (a == 0) {
+        if (!a)
             return false;
-        } else {
-            return b;
-        }
-    
+        return b;
+
     default:
-        break;
+        return false;
     }
 }
