@@ -402,6 +402,280 @@ También surgió un problema al intentar ejecutar varios \texttt{scanf} secuenci
     \item Se redujo significativamente la cantidad de instrucciones TAC generadas, especialmente en bloques con constantes o ramas condicionales simples.
     \item El código ensamblador final es más corto y limpio, sin secciones redundantes ni saltos innecesarios.
     \item El análisis de flujo y eliminación de código muerto permitió detectar errores lógicos en el propio lenguaje de entrada (por ejemplo, condiciones inalcanzables o retornos prematuros).
+    \subsection{Propagación de Constantes}
+
+La \textbf{propagación de constantes} es la primer capa de optimizacion que aplicamos, posterior a realizar el analisis lexico consiste en sustituir las expresiones cuyo valor puede determinarse estáticamente. De este modo, se reducen tanto la complejidad del AST como la cantidad de instrucciones generadas en código máquina.
+
+A continuación se muestra un ejemplo de la transformación aplicada a la instrucción:
+
+\begin{verbatim}
+a = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+\end{verbatim}
+
+\subsubsection*{AST sin optimización}
+
+\begin{verbatim}
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (0)
+│   │   │   └── BINOP(+)
+│   │   │   │   ├── BINOP(+)
+│   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   │   │   │   ├── INT(1)
+│   │   │   │   │   │   │   │   │   │   │   │   └── INT(2)
+│   │   │   │   │   │   │   │   │   │   │   └── INT(3)
+│   │   │   │   │   │   │   │   │   │   └── INT(4)
+│   │   │   │   │   │   │   │   │   └── INT(5)
+│   │   │   │   │   │   │   │   └── INT(6)
+│   │   │   │   │   │   │   └── INT(7)
+│   │   │   │   │   │   └── INT(8)
+│   │   │   │   │   └── INT(9)
+│   │   │   │   └── INT(10)
+\end{verbatim}
+
+El árbol posee una profundidad de 10 niveles anidados de operaciones binarias, lo que implica una mayor carga para el análisis semántico y la generación de código.
+
+\subsubsection*{AST tras la propagación de constantes}
+
+\begin{verbatim}
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (0)
+│   │   │   └── INT(55)
+\end{verbatim}
+
+Luego de aplicar la propagación, la expresión se reemplaza directamente por su valor constante, reduciendo significativamente la profundidad y cantidad de nodos del árbol.
+
+\subsubsection*{Impacto en el código ensamblador}
+
+La diferencia también se observa claramente en el código generado.  
+Sin aplicar la optimización:
+
+\begin{verbatim}
+.text
+...
+.globl  main
+main:
+    pushq   %rbp
+    movq    %rsp, %rbp
+    movl    $0, %eax
+    subq    $8, %rsp
+    ...
+    ; múltiples operaciones de suma
+    movq    %rbp, %rsp
+    popq    %rbp
+    ret
+\end{verbatim}
+
+Con la optimización aplicada:
+
+\begin{verbatim}
+.text
+...
+.globl  main
+main:
+    pushq   %rbp
+    movq    %rsp, %rbp
+    movl    $55, %eax
+    subq    $8, %rsp
+    movl    %eax, -8(%rbp)
+    movl    -8(%rbp), %eax
+    subq    $8, %rsp
+    movl    %eax, -16(%rbp)
+    movq    %rbp, %rsp
+    popq    %rbp
+    ret
+\end{verbatim}
+
+\subsubsection*{Resultados}
+
+La simplificación reduce drásticamente el tamaño del árbol (de 19 nodos a 3) y elimina todas las operaciones aritméticas redundantes.  
+Esto no solo acorta el código ensamblador, sino que además disminuye el tiempo de ejecución y facilita futuras optimizaciones como la eliminación de código muerto o la propagación de copias.
+
+\subsection{Eliminación de Código Muerto (Dead Code Elimination)}
+
+La segunda optimizacion que aplicamos fue la  \textbf{Eliminación de Código Muerto} que tiene como objetivo suprimir del AST todas aquellas instrucciones o bloques que nunca se ejecutan, es decir el "codigo muerto"
+Esta transformación reduce el tamaño del código intermedio y del código ensamblador generado, mejorando la eficiencia global del compilador.
+
+\subsubsection*{Ejemplo de aplicación}
+
+El siguiente programa fue diseñado para incluir instrucciones inalcanzables con el fin de ilustrar el efecto de la optimización:
+
+\begin{verbatim}
+program {
+    integer useless(integer x) {
+        integer y = 0;
+        y = x * 2;
+        return y;
+        y = y + 100;   // Código muerto
+        x = 0;         // Código muerto
+    }
+
+    void main() {
+        integer a = 0;
+        a = 10;
+        if (false) then {
+            a = a + 1;  // Código muerto
+        } else {
+            a = a + 2;
+        }
+
+        if (true) then {
+            a = a * 2;
+        } else {
+            a = a * 999; // Código muerto
+        }
+
+        return;
+        a = 9999;  // Código muerto
+        a = 9998;  // Código muerto
+        a = 9997;  // Código muerto
+        a = 9996;  // Código muerto
+        a = 0;     // Código muerto
+    }
+}
+\end{verbatim}
+
+\subsubsection*{Árbol antes de la optimización}
+
+\begin{verbatim}
+PROGRAM
+└── FUNCTION(useless)
+│   ├── PARAM(integer, x)
+│   └── BLOCK
+│   │   ├── VAR_DECL(y)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(y) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(y) scope = (1)
+│   │   │   └── BINOP(*)
+│   │   │   │   ├── ID(x) scope = (1)
+│   │   │   │   └── INT(2)
+│   │   └── RETURN
+│   │   │   └── ID(y) scope = (1)
+│   │   └── ASSIGN
+│   │   │   ├── ID(y) scope = (1)
+│   │   │   └── BINOP(+)
+│   │   │   │   ├── ID(y) scope = (1)
+│   │   │   │   └── INT(100)
+│   │   └── ASSIGN
+│   │   │   ├── ID(x) scope = (1)
+│   │   │   └── INT(0)
+└── FUNCTION(main)
+│   └── BLOCK
+│   │   ├── VAR_DECL(a)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(10)
+│   │   └── IF
+│   │   │   ├── BOOL(FALSE)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(+)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(1)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(+)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(2)
+│   │   └── IF
+│   │   │   ├── BOOL(TRUE)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(*)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(2)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(*)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(999)
+│   │   └── RETURN
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9999)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9998)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9997)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9996)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(0)
+\end{verbatim}
+
+\subsubsection*{Árbol después de la optimización}
+
+\begin{verbatim}
+PROGRAM
+└── FUNCTION(useless)
+│   ├── PARAM(integer, x)
+│   └── BLOCK
+│   │   ├── VAR_DECL(y)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(y) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(y) scope = (1)
+│   │   │   └── BINOP(*)
+│   │   │   │   ├── ID(x) scope = (1)
+│   │   │   │   └── INT(2)
+│   │   └── RETURN
+│   │   │   └── ID(y) scope = (1)
+└── FUNCTION(main)
+│   └── BLOCK
+│   │   ├── VAR_DECL(a)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(10)
+│   │   └── BLOCK
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── BINOP(+)
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── INT(2)
+│   │   └── BLOCK
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── BINOP(*)
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── INT(2)
+│   │   └── RETURN
+\end{verbatim}
+
+\subsubsection*{Análisis de resultados}
+
+En el árbol optimizado se observa que:
+\begin{itemize}
+    \item Se eliminaron las ramas \texttt{if (false)} y los bloques \texttt{else} de \texttt{if (true)}, al ser inalcanzables.
+    \item Se suprimieron todas las asignaciones posteriores a un \texttt{return}.
+    \item Se eliminaron las instrucciones sin efecto observable sobre el flujo del programa.
+\end{itemize}
+
+El resultado final es un árbol considerablemente más compacto, que representa únicamente las operaciones efectivamente ejecutables del programa. 
+Esto reduce la carga de procesamiento en las etapas posteriores del compilador y genera código ensamblador más breve y eficiente.
+
+
 \end{itemize}
 
 \subsection{Limitaciones y posibles mejoras}
