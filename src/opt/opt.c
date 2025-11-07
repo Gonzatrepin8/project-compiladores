@@ -4,6 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+bool opt_dead_code_enabled = false;
+bool opt_constant_folding_enabled = false;
+bool opt_short_circuit_enabled = false;
+bool opt_peephole_enabled = false;
+
 void dead_code(AST *n) {
     if (!n) return;
 
@@ -87,7 +92,7 @@ void const_prop(AST *n) {
                 n->type = NODE_BOOL;
             }
             
-            if (OPT_PEEPHOLE) {
+            if (opt_peephole_enabled) {
                 if (strcmp(n->info->op, "+") == 0) {
                     n->info->ival = optimize_int_operators(lf, rg, BINOP_SUM);
                     n->type = NODE_INT;
@@ -152,7 +157,7 @@ void const_prop(AST *n) {
             int lf = n->left->info->bval;
             int rg = n->right->info->bval;
 
-            if (OPT_SHORT_CIRCUIT_EVALUATION) {
+            if (opt_short_circuit_enabled) {
                 if (strcmp(n->info->op, "&&") == 0) {
                     n->info->bval = optimize_bool_operators(lf, rg, BINOP_AND);
                     n->type = NODE_BOOL;
