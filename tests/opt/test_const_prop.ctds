@@ -1,0 +1,35 @@
+program {
+    void print_int(integer a) extern;
+    void print_bool(bool a) extern;
+
+    void main() {
+        integer a = 0;
+        integer b = 0;
+        integer c = 0;
+        integer d = 0;
+        integer e = 0;
+        bool f = false;
+        bool g = false;
+        bool h = false;
+
+        a = 2 + 3 + 0 + 0 + 0;          // -> a = 5
+        b = 2 * 3;         // -> b = 6
+        c = 10 / 5;        // -> c = 2
+        d = 4 % 2;         // -> d = 0
+        e = (2 * 3) + (4 * 5) - (10 / 2); // -> e = 6 + 20 - 5 = 21
+
+        f = true && true && true && true;           // f = true;
+        g = false || false || false || !false;      // g = true;
+        h = (!false == true) || (true && !false);           // h = true; 
+
+        print_int(a);      // debería imprimir 5
+        print_int(b);      // debería imprimir 6
+        print_int(c);      // debería imprimir 2
+        print_int(d);      // debería imprimir 0
+        print_int(e);      // deberia imprimir 21
+        print_bool(f);     // deberia imprimir true
+        print_bool(g);     // deberia imprimir true
+        print_bool(h);     // deberia imprimir true
+
+    }
+}

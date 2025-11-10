@@ -1,21 +1,29 @@
-#include <libgen.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <libgen.h>
 #include "ast/ast.h"
 #include "symbol_table/symtab.h"
 #include "symbol_table/build_symtab.h"
 #include "type_check/type_check.h"
 #include "three_address/three_address.h"
 #include "assembly/assembly_gen.h"
+#include "opt/opt.h" 
 
 extern int yylex(void);
 extern void yyerror(const char *s);
+int yyparse(void);
 
 extern int debug_mode;
 extern bool semantic_error;
 extern bool type_check_error;
+
+extern bool opt_dead_code_enabled;
+extern bool opt_constant_folding_enabled;
+extern bool opt_short_circuit_enabled;
+extern bool opt_peephole_enabled;
 
 extern FILE *yyin;
 extern FILE *lexout;
@@ -43,9 +51,69 @@ typedef enum {
 
 TargetStage target_stage = TARGET_FULL;
 
+
+void print_optimization_help() {
+    printf("\n");
+    printf("---------------------------------------------\n");
+    printf("The following options control optimizations:\n");
+    printf("---------------------------------------------\n");
+    printf("\n    -dead_code:                 eliminates dead code.\n");
+    printf("    -constant_folding:          performs constant propagation.\n");
+    printf("    -short_circuit_evaluation:  evaluates second argument only if the first one is not enough.\n");
+    printf("    -peephole:                  performs peephole optimizations (simple optimizations).\n");
+    printf("\n");
+}
+
+bool set_optimization_flag(const char *opt) {
+    if (strcmp(opt, "-dead_code") == 0) {
+        opt_dead_code_enabled = true;
+    } else if (strcmp(opt, "-constant_folding") == 0) {
+        opt_constant_folding_enabled = true;
+    } else if (strcmp(opt, "-short_circuit_evaluation") == 0) {
+        opt_short_circuit_enabled = true;
+    } else if (strcmp(opt, "-peephole") == 0) {
+        opt_peephole_enabled = true;
+    } else {
+        return false;
+    }
+    return true;
+}
+
+int handle_optimizations(int argi, int argc, char **argv) {
+    int idx = argi + 1;
+
+    if (idx >= argc) {
+        print_optimization_help();
+        exit(0);
+    }
+
+    if (strcmp(argv[idx], "all") == 0) {
+        opt_dead_code_enabled = true;
+        opt_constant_folding_enabled = true;
+        opt_short_circuit_enabled = true;
+        opt_peephole_enabled = true;
+        return idx + 1;
+    }
+
+    bool consumed = false;
+    while (idx < argc && set_optimization_flag(argv[idx])) {
+        consumed = true;
+        idx++;
+    }
+
+    if (!consumed) {
+        const char *bad = (idx < argc) ? argv[idx] : "(missing)";
+        fprintf(stderr, "Unknown optimization: %s\n", bad);
+        print_optimization_help();
+        exit(1);
+    }
+
+    return idx;
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s [-debug] [-target scan|parse|codinter|assembly] <sourcefile>\n", argv[0]);
+        fprintf(stderr, "Usage: %s [-debug] [-target scan|parse|codinter|assembly] [-opt] <sourcefile>\n", argv[0]);
         return 1;
     }
 
@@ -73,6 +141,11 @@ int main(int argc, char **argv) {
                 return 1;
             }
             argi += 2;
+        } else if (strcmp(argv[argi], "-opt") == 0) {
+            argi = handle_optimizations(argi, argc, argv);
+            continue;
+        } else if (set_optimization_flag(argv[argi])) {
+            argi++;
         } else {
             fprintf(stderr, "Unknown option: %s\n", argv[argi]);
             return 1;
@@ -173,6 +246,15 @@ int main(int argc, char **argv) {
 
                 symtab_print(global, symout);
                 check_types(root);
+                //printf("ARBOL SIN OPTIMIZAR \n\n\n");
+                print_ast(root, 0, 1);
+                if (opt_constant_folding_enabled) {
+                    const_prop(root);
+                }
+                if (opt_dead_code_enabled) {
+                    dead_code(root);
+                }
+                //printf("ARBOL OPTIMIZADO \n\n\n");
                 print_ast(root, 0, 1);
                 if (type_check_error) {
                     fprintf(stderr, "Type check error.\n");

@@ -1,0 +1,34 @@
+program {
+    integer useless(integer x) {
+        integer y = 0;
+        y = x * 2;
+        return y;
+        y = y + 100;        //  código muerto (después del return)
+        x = 0;              //  también muerto
+    }
+
+    void main() {
+        integer a = 0;
+        a = 10;
+
+        if (false) then {       //  rama muerta (condición constante falsa)
+            a = a + 1;
+        } else {
+            a = a + 2;
+        }
+
+        if (true) then {       //  rama muerta en el else
+            a = a * 2;
+        } else {
+            a = a * 999;
+        }
+
+        return;             //  todo después de esto es código muerto
+        a = 9999;
+        a = 9998;
+        a = 9997;
+        a = 9996;
+        // ... 
+        a = 0;
+    }
+}

@@ -350,4 +350,337 @@ El mapa de variables y el tamaño de la pila se reinician al principio de cada f
     \item \textbf{Convención de Llamada:} Implementar correctamente la convención de llamada (paso de argumentos en registros y pila, limpieza de pila) es complejo. Aunque se intenta seguir (usando \texttt{edi}, \texttt{esi}), requiere atención a los detalles, especialmente con más de 6 argumentos o tipos no enteros (no soportados por TDS25).
 \end{itemize}
 
+\section{Optimización}
+
+\subsection{Objetivo}
+En esta etapa se buscó mejorar la eficiencia del código generado reduciendo operaciones innecesarias y eliminando fragmentos que nunca se ejecutan. Para ello, implementamos una fase de \textbf{optimización sobre el Árbol de Sintaxis Abstracta (AST)} antes de la generación del código intermedio.
+
+\subsection{Diseño y decisiones clave}
+La optimización se centra en dos técnicas principales: \textbf{propagación de constantes} y \textbf{eliminación de código muerto (dead code elimination)}. Ambas se implementaron directamente sobre el AST, antes de generar el Código de Tres Direcciones (TAC). Además agregamos otras técnicas de optimización como \textbf{evaluación cortocircuito} y \textbf{Peephole}.
+
+\begin{itemize}
+    \item \textbf{Propagación de constantes:}  
+    Si una expresión puede evaluarse en tiempo de compilación (por ejemplo, \texttt{3 + 4}, \texttt{true \&\& false}), el nodo se reemplaza por un nuevo nodo literal con el valor resultante. Esto reduce el tamaño del AST y evita generar instrucciones TAC innecesarias.
+    
+    \item \textbf{Eliminación de código muerto:}  
+    Se recorren los nodos del AST con una función recursiva llamada \texttt{dead\_code}, que identifica y elimina subárboles que nunca serán ejecutados.  
+    Ejemplos típicos:
+    \begin{itemize}
+        \item Todo el código que sigue a un \texttt{return} dentro de una función se elimina, ya que es inalcanzable.
+        \item En estructuras \texttt{if-else}, si la condición es una constante, se conserva únicamente la rama correspondiente.
+        \item En bucles \texttt{while} con condición constante falsa, se elimina completamente el cuerpo del bucle.
+    \end{itemize}
+    
+    \item \textbf{Estrategia incremental:}  
+    La optimización se aplica de manera recursiva, revisando cada nodo y realizando simplificaciones en profundidad. Cada vez que un nodo se modifica, el recorrido vuelve sobre sus hijos para detectar posibles nuevas oportunidades de optimización.
+
+    \item \textbf{Evaluación por cortocircuito:}
+    Se aplica en las operaciones lógicas durante la propagación de constantes, con el objetivo de evitar evaluaciones innecesarias. Esta técnica determina cuándo el resultado de una expresión puede conocerse únicamente a partir del primer operando, sin necesidad de evaluar el segundo. Por ejemplo, en una operación OR, si el primer operando es \texttt{true}, el resultado será \texttt{true} sin evaluar el siguiente; mientras que en una operación AND, si el primer operando es \texttt{false}, el resultado será \texttt{false} automáticamente.
+    
+    \item \textbf{Optimización Peephole:}
+    En las operaciones binarias aritméticas se aplican reglas algebraicas básicas para eliminar cálculos redundantes y simplificar expresiones. Esta técnica, conocida como \emph{peephole optimization}, examina pequeñas secuencias de instrucciones (una “ventana” o \emph{peephole}) para detectar patrones que puedan ser reemplazados por versiones más eficientes. Por ejemplo, expresiones como \texttt{x + 0} o \texttt{x * 1} se simplifican directamente a \texttt{x}, evitando operaciones innecesarias.
+\end{itemize}
+
+\subsection{Detalles de implementación interesantes}
+\begin{itemize}
+    \item La función \texttt{dead\_code(AST *n)} recorre el árbol en profundidad (\textit{depth-first}) y modifica los punteros de los nodos en tiempo real.  
+    Si detecta un nodo \texttt{NODE\_RETURN}, elimina todo lo que sigue en la secuencia de sentencias (\texttt{n->next}).
+    \item En nodos \texttt{NODE\_IF} y \texttt{NODE\_WHILE}, cuando la condición es constante, se decide si conservar o eliminar ramas completas, evitando recorrer innecesariamente partes del árbol.
+    \item Durante la propagación de constantes, los nodos de operaciones binarias (\texttt{NODE\_BINOP}) o unarias (\texttt{NODE\_UNOP}) se reemplazan por literales evaluados. Por ejemplo, una expresión \texttt{3 * 2} se convierte directamente en un nodo \texttt{INT(6)}.
+    \item Para evitar pérdida de memoria, se liberan los nodos sustituidos mediante \texttt{free()} y se reasignan punteros al nuevo nodo simplificado.
+\end{itemize}
+
+\subsection{Problemas encontrados}
+Durante las primeras pruebas, al optimizar de forma recursiva los nodos, se presentaron \textbf{violaciones de segmento (segmentation faults)}.  
+Esto ocurría principalmente porque, al eliminar un nodo, se accedía a memoria liberada desde su nodo padre o desde un hermano (\texttt{n->next}).  
+El problema se resolvió controlando cuidadosamente los punteros antes y después de liberar memoria, y reasignando correctamente el flujo del recorrido.
+
+También surgió un problema al intentar ejecutar varios \texttt{scanf} secuenciales en el código generado. Al analizarlo, descubrimos que el offset se calcula de una manera distinta que el que se necesita para scanf. Para solucionarlo se agrego una condición para detectar cuando el offset se encuentra desalineado y asi cambia el tamaño del stack para evitar estos errores.
+
+\subsection{Resultados y mejoras observadas}
+\begin{itemize}
+    \item Se redujo significativamente la cantidad de instrucciones TAC generadas, especialmente en bloques con constantes o ramas condicionales simples.
+    \item El código ensamblador final es más corto y limpio, sin secciones redundantes ni saltos innecesarios.
+    \item El análisis de flujo y eliminación de código muerto permitió detectar errores lógicos en el propio lenguaje de entrada (por ejemplo, condiciones inalcanzables o retornos prematuros).
+    \subsection{Propagación de Constantes}
+
+La \textbf{propagación de constantes} es la primer capa de optimizacion que aplicamos, posterior a realizar el analisis lexico consiste en sustituir las expresiones cuyo valor puede determinarse estáticamente. De este modo, se reducen tanto la complejidad del AST como la cantidad de instrucciones generadas en código máquina.
+
+A continuación se muestra un ejemplo de la transformación aplicada a la instrucción:
+
+\begin{verbatim}
+a = 1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10;
+\end{verbatim}
+
+\subsubsection*{AST sin optimización}
+
+\begin{verbatim}
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (0)
+│   │   │   └── BINOP(+)
+│   │   │   │   ├── BINOP(+)
+│   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   │   │   ├── BINOP(+)
+│   │   │   │   │   │   │   │   │   │   │   │   ├── INT(1)
+│   │   │   │   │   │   │   │   │   │   │   │   └── INT(2)
+│   │   │   │   │   │   │   │   │   │   │   └── INT(3)
+│   │   │   │   │   │   │   │   │   │   └── INT(4)
+│   │   │   │   │   │   │   │   │   └── INT(5)
+│   │   │   │   │   │   │   │   └── INT(6)
+│   │   │   │   │   │   │   └── INT(7)
+│   │   │   │   │   │   └── INT(8)
+│   │   │   │   │   └── INT(9)
+│   │   │   │   └── INT(10)
+\end{verbatim}
+
+El árbol posee una profundidad de 10 niveles anidados de operaciones binarias, lo que implica una mayor carga para el análisis semántico y la generación de código.
+
+\subsubsection*{AST tras la propagación de constantes}
+
+\begin{verbatim}
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (0)
+│   │   │   └── INT(55)
+\end{verbatim}
+
+Luego de aplicar la propagación, la expresión se reemplaza directamente por su valor constante, reduciendo significativamente la profundidad y cantidad de nodos del árbol.
+
+\subsubsection*{Impacto en el código ensamblador}
+
+La diferencia también se observa claramente en el código generado.  
+Sin aplicar la optimización:
+
+\begin{verbatim}
+.text
+...
+.globl  main
+main:
+    pushq   %rbp
+    movq    %rsp, %rbp
+    movl    $0, %eax
+    subq    $8, %rsp
+    ...
+    ; múltiples operaciones de suma
+    movq    %rbp, %rsp
+    popq    %rbp
+    ret
+\end{verbatim}
+
+Con la optimización aplicada:
+
+\begin{verbatim}
+.text
+...
+.globl  main
+main:
+    pushq   %rbp
+    movq    %rsp, %rbp
+    movl    $55, %eax
+    subq    $8, %rsp
+    movl    %eax, -8(%rbp)
+    movl    -8(%rbp), %eax
+    subq    $8, %rsp
+    movl    %eax, -16(%rbp)
+    movq    %rbp, %rsp
+    popq    %rbp
+    ret
+\end{verbatim}
+
+\subsubsection*{Resultados}
+
+La simplificación reduce drásticamente el tamaño del árbol (de 19 nodos a 3) y elimina todas las operaciones aritméticas redundantes.  
+Esto no solo acorta el código ensamblador, sino que además disminuye el tiempo de ejecución y facilita futuras optimizaciones como la eliminación de código muerto o la propagación de copias.
+
+\subsection{Eliminación de Código Muerto (Dead Code Elimination)}
+
+La segunda optimizacion que aplicamos fue la  \textbf{Eliminación de Código Muerto} que tiene como objetivo suprimir del AST todas aquellas instrucciones o bloques que nunca se ejecutan, es decir el "codigo muerto"
+Esta transformación reduce el tamaño del código intermedio y del código ensamblador generado, mejorando la eficiencia global del compilador.
+
+\subsubsection*{Ejemplo de aplicación}
+
+El siguiente programa fue diseñado para incluir instrucciones inalcanzables con el fin de ilustrar el efecto de la optimización:
+
+\begin{verbatim}
+program {
+    integer useless(integer x) {
+        integer y = 0;
+        y = x * 2;
+        return y;
+        y = y + 100;   // Código muerto
+        x = 0;         // Código muerto
+    }
+
+    void main() {
+        integer a = 0;
+        a = 10;
+        if (false) then {
+            a = a + 1;  // Código muerto
+        } else {
+            a = a + 2;
+        }
+
+        if (true) then {
+            a = a * 2;
+        } else {
+            a = a * 999; // Código muerto
+        }
+
+        return;
+        a = 9999;  // Código muerto
+        a = 9998;  // Código muerto
+        a = 9997;  // Código muerto
+        a = 9996;  // Código muerto
+        a = 0;     // Código muerto
+    }
+}
+\end{verbatim}
+
+\subsubsection*{Árbol antes de la optimización}
+
+\begin{verbatim}
+PROGRAM
+└── FUNCTION(useless)
+│   ├── PARAM(integer, x)
+│   └── BLOCK
+│   │   ├── VAR_DECL(y)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(y) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(y) scope = (1)
+│   │   │   └── BINOP(*)
+│   │   │   │   ├── ID(x) scope = (1)
+│   │   │   │   └── INT(2)
+│   │   └── RETURN
+│   │   │   └── ID(y) scope = (1)
+│   │   └── ASSIGN
+│   │   │   ├── ID(y) scope = (1)
+│   │   │   └── BINOP(+)
+│   │   │   │   ├── ID(y) scope = (1)
+│   │   │   │   └── INT(100)
+│   │   └── ASSIGN
+│   │   │   ├── ID(x) scope = (1)
+│   │   │   └── INT(0)
+└── FUNCTION(main)
+│   └── BLOCK
+│   │   ├── VAR_DECL(a)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(10)
+│   │   └── IF
+│   │   │   ├── BOOL(FALSE)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(+)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(1)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(+)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(2)
+│   │   └── IF
+│   │   │   ├── BOOL(TRUE)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(*)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(2)
+│   │   │   └── BLOCK
+│   │   │   │   └── ASSIGN
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── BINOP(*)
+│   │   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   │   └── INT(999)
+│   │   └── RETURN
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9999)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9998)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9997)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(9996)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(0)
+\end{verbatim}
+
+\subsubsection*{Árbol después de la optimización}
+
+\begin{verbatim}
+PROGRAM
+└── FUNCTION(useless)
+│   ├── PARAM(integer, x)
+│   └── BLOCK
+│   │   ├── VAR_DECL(y)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(y) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(y) scope = (1)
+│   │   │   └── BINOP(*)
+│   │   │   │   ├── ID(x) scope = (1)
+│   │   │   │   └── INT(2)
+│   │   └── RETURN
+│   │   │   └── ID(y) scope = (1)
+└── FUNCTION(main)
+│   └── BLOCK
+│   │   ├── VAR_DECL(a)
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── INT(0)
+│   │   └── ASSIGN
+│   │   │   ├── ID(a) scope = (1)
+│   │   │   └── INT(10)
+│   │   └── BLOCK
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── BINOP(+)
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── INT(2)
+│   │   └── BLOCK
+│   │   │   └── ASSIGN
+│   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   └── BINOP(*)
+│   │   │   │   │   ├── ID(a) scope = (1)
+│   │   │   │   │   └── INT(2)
+│   │   └── RETURN
+\end{verbatim}
+
+\subsubsection*{Análisis de resultados}
+
+En el árbol optimizado se observa que:
+\begin{itemize}
+    \item Se eliminaron las ramas \texttt{if (false)} y los bloques \texttt{else} de \texttt{if (true)}, al ser inalcanzables.
+    \item Se suprimieron todas las asignaciones posteriores a un \texttt{return}.
+    \item Se eliminaron las instrucciones sin efecto observable sobre el flujo del programa.
+\end{itemize}
+
+El resultado final es un árbol considerablemente más compacto, que representa únicamente las operaciones efectivamente ejecutables del programa. 
+Esto reduce la carga de procesamiento en las etapas posteriores del compilador y genera código ensamblador más breve y eficiente.
+
+
+\end{itemize}
+
+\subsection{Limitaciones y posibles mejoras}
+\begin{itemize}
+    \item Actualmente la optimización se aplica solo sobre el AST. En el futuro, podría extenderse al nivel TAC para detectar redundancias entre instrucciones.
+\end{itemize}
+
 \end{document}
